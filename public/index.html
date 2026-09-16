@@ -350,42 +350,74 @@
             <!-- 7. เงินฝากเข้ากองทุน (A) -->
             <div class="control-item">
               <div class="control-label-row">
-                <label><i class="fa-solid fa-chart-line text-fund-a"></i> 7. เงินฝากเข้ากองทุน (A)/เดือน</label>
-                <select id="selFundADepositYear" class="year-select">
-                  <!-- Populated dynamically 2026-2050 -->
-                </select>
+                <label><i class="fa-solid fa-chart-line text-fund-a"></i> 7. เงินฝากเข้ากองทุน (A) (เริ่มปี 2026 ตั้งต้น ฿500,000)</label>
               </div>
-              <div class="control-input-row">
-                <input type="range" id="sliderFundADeposit" min="0" max="100000" value="30000" step="2000">
+              <div class="control-input-row" style="margin-top: 6px;">
+                <span style="font-size: 0.8rem; color: var(--text-muted);">ฝากเพิ่มเดือนละ:</span>
+                <input type="range" id="sliderFundADeposit" min="0" max="100000" value="30000" step="2000" style="flex:1;">
                 <div class="slider-badge" id="badgeFundADeposit">30,000 ฿/ด.</div>
+              </div>
+              <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 6px; font-size: 0.82rem; background: rgba(15, 23, 42, 0.5); padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border-color);">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                  <input type="checkbox" id="chkFundADepositEveryMonth">
+                  <span style="color: var(--text-main); font-weight: 500;">ฝากทุกเดือน (ฝากต่อเนื่องทุกปี)</span>
+                </label>
+                <div id="boxFundADepositStop" style="display: flex; align-items: center; gap: 6px; color: var(--text-muted); flex-wrap: wrap;">
+                  <span>หรือ หยุดฝาก: เดือน</span>
+                  <select id="selFundADepositEndMonth" style="background: rgba(30,41,59,0.8); color:#FFF; padding:3px 8px; border-radius:6px; border:1px solid var(--border-color); font-size:0.8rem;">
+                    <option value="4" selected>เมษายน (04)</option>
+                    <option value="12">ธันวาคม (12)</option>
+                    <option value="1">มกราคม (01)</option>
+                  </select>
+                  <span>ปี</span>
+                  <select id="selFundADepositEndYear" class="year-select" style="font-size:0.8rem; padding:3px 8px;">
+                    <!-- Populated dynamically 2026-2050 -->
+                  </select>
+                </div>
               </div>
             </div>
 
             <!-- 7.2. ถอนเงินจากกองทุน (A) ย้ายเข้าสะสมทรัพย์ (B) -->
             <div class="control-item" style="border: 1px dashed rgba(16, 185, 129, 0.4); background: rgba(16, 185, 129, 0.05);">
               <div class="control-label-row">
-                <label><i class="fa-solid fa-hand-holding-dollar text-fund-a"></i> 7.2 ถอนเงินกองทุน (A) ย้ายเข้าสะสมทรัพย์ (B)</label>
-                <select id="selFundAWithdrawYear" class="year-select">
+                <label><i class="fa-solid fa-hand-holding-dollar text-fund-a"></i> 7.2 ถอนเงินกองทุน (A) ย้ายไปสะสมทรัพย์ (B)</label>
+              </div>
+              <div style="display: flex; gap: 8px; align-items: center; margin-top: 6px; flex-wrap: wrap;">
+                <span style="font-size: 0.8rem; color: var(--text-muted);">เริ่มถอนปี:</span>
+                <select id="selFundAWithdrawYear" class="year-select" style="flex: 1; font-size:0.82rem;">
                   <!-- Populated dynamically 2026-2050 -->
                 </select>
               </div>
-              <div class="control-input-row">
-                <input type="range" id="sliderFundAWithdrawAmount" min="0" max="10000000" value="0" step="50000">
+              <div class="control-input-row" style="margin-top: 6px;">
+                <span style="font-size: 0.8rem; color: var(--text-muted);">จำนวนเงินถอน:</span>
+                <input type="range" id="sliderFundAWithdrawAmount" min="0" max="10000000" value="0" step="50000" style="flex:1;">
                 <div class="slider-badge" id="badgeFundAWithdrawAmount">฿0</div>
+              </div>
+              <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 6px; font-size: 0.82rem; background: rgba(15, 23, 42, 0.5); padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border-color);">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                  <input type="checkbox" id="chkFundAWithdrawEveryYear">
+                  <span style="color: var(--text-main); font-weight: 500;">ถอนเท่ากันทุกปี (ถอนต่อเนื่องทุกปีตั้งแต่ปีที่เริ่ม)</span>
+                </label>
+                <div id="boxFundAWithdrawStop" style="display: flex; align-items: center; gap: 6px; color: var(--text-muted); flex-wrap: wrap;">
+                  <span>หรือ หยุดถอน: ปี</span>
+                  <select id="selFundAWithdrawEndYear" class="year-select" style="font-size:0.8rem; padding:3px 8px;">
+                    <!-- Populated dynamically 2026-2050 -->
+                  </select>
+                </div>
               </div>
             </div>
 
-            <!-- 8. เงินเก็บเข้าสะสมทรัพย์ (B) -->
+            <!-- 8. เงินสำรองสะสมทรัพย์ (B) -->
             <div class="control-item">
               <div class="control-label-row">
-                <label><i class="fa-solid fa-piggy-bank text-reserve-b"></i> 8. เงินเก็บสำรองสะสมทรัพย์ (B)</label>
-                <select id="selReserveBInitYear" class="year-select">
-                  <option value="2026" selected>ปีที่ตั้งต้น: 2026 (ปี 0)</option>
-                  <option value="2027">ปีที่ตั้งต้น: 2027 (ปี 1)</option>
-                </select>
+                <label><i class="fa-solid fa-piggy-bank text-reserve-b"></i> 8. เงินสำรองสะสมทรัพย์ (B)</label>
               </div>
-              <div class="control-input-row">
-                <input type="range" id="sliderReserveBInit" min="0" max="2000000" value="300000" step="50000">
+              <div style="font-size: 0.8rem; color: #34D399; margin-top: 4px; font-weight: 600;">
+                <i class="fa-solid fa-circle-info"></i> เริ่มปี 2026 จำนวน 300,000 บาท (ใช้เป็นฐานตั้งต้นในการคำนวณ)
+              </div>
+              <div class="control-input-row" style="margin-top: 6px;">
+                <span style="font-size: 0.8rem; color: var(--text-muted);">จำนวนเงินตั้งต้น 2026:</span>
+                <input type="range" id="sliderReserveBInit" min="0" max="2000000" value="300000" step="50000" style="flex:1;">
                 <div class="slider-badge" id="badgeReserveBInit">฿300k</div>
               </div>
             </div>

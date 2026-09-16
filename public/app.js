@@ -280,7 +280,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const defaultParams = {
     fundAInit: 500000,
     fundAYield: 10, // % per year
-    fundADeposit: 30000, // oct 26 - apr 27
+    fundADeposit: 30000, // deposit per month
+    fundADepositEveryMonth: false, // false = until stop month/year
+    fundADepositEndMonth: 4,
+    fundADepositEndYear: 2027,
     fundATransfer: 200000, // chunk to transfer when B is depleted
     reserveBInit: 300000,
     incomePhase1: 95000, // oct 26 - apr 27
@@ -296,8 +299,10 @@ document.addEventListener('DOMContentLoaded', () => {
     pfMonth: 1, // payout month
     pfYear: 2032, // payout year
     pfDest: 'pf', // 'pf' | 'fundA' | 'reserveB'
-    fundAWithdrawYear: 2030, // year to transfer from Fund A into Reserve B
+    fundAWithdrawStartYear: 2030, // start year to transfer from Fund A into Reserve B
+    fundAWithdrawEndYear: 2030, // end year to transfer
     fundAWithdrawAmount: 0, // amount to transfer from Fund A into Reserve B
+    fundAWithdrawEveryYear: false, // true = withdraw every year continuously
     yearlyOverrides: {} // { 2030: { income: 25000, expense: 20000 } }
   };
 
@@ -477,19 +482,27 @@ document.addEventListener('DOMContentLoaded', () => {
           condoEventThisMonth = true;
         }
 
-        // Milestone 3: Dynamic Manual Withdrawal from Fund A to Reserve B
+        // Milestone 3: Dynamic Manual Withdrawal from Fund A to Reserve B (Item 7.2)
         let fundAWithdrawEventThisMonth = false;
         let actualFundAWithdrawVal = 0;
-        const targetFundAWithdrawYear = parseInt(params.fundAWithdrawYear) || 2030;
-        const targetFundAWithdrawMonth = 1;
-        if (y === targetFundAWithdrawYear && m === targetFundAWithdrawMonth) {
-          const wantAmount = parseFloat(params.fundAWithdrawAmount) || 0;
-          if (wantAmount > 0) {
-            actualFundAWithdrawVal = Math.min(fundA, wantAmount);
-            fundA -= actualFundAWithdrawVal;
-            reserveB += actualFundAWithdrawVal;
-            fundAWithdrawEventThisMonth = true;
+        const startWithdrawY = parseInt(params.fundAWithdrawStartYear) || 2030;
+        const endWithdrawY = parseInt(params.fundAWithdrawEndYear) || startWithdrawY;
+        const wantAmount = parseFloat(params.fundAWithdrawAmount) || 0;
+
+        let isWithdrawThisMonth = false;
+        if (wantAmount > 0 && m === 1) {
+          if (params.fundAWithdrawEveryYear) {
+            if (y >= startWithdrawY) isWithdrawThisMonth = true;
+          } else {
+            if (y >= startWithdrawY && y <= endWithdrawY) isWithdrawThisMonth = true;
           }
+        }
+
+        if (isWithdrawThisMonth) {
+          actualFundAWithdrawVal = Math.min(fundA, wantAmount);
+          fundA -= actualFundAWithdrawVal;
+          reserveB += actualFundAWithdrawVal;
+          fundAWithdrawEventThisMonth = true;
         }
 
         // Determine Income & Expenses (Yearly Override takes precedence if defined)
@@ -501,8 +514,20 @@ document.addEventListener('DOMContentLoaded', () => {
         // Base Phase Check
         if (y === 2026 || (y === 2027 && m <= 4)) {
           isPhase1 = true;
-          depositToA = parseFloat(params.fundADeposit) || 0;
         }
+
+        // Item 7: Fund A Deposit Calculation
+        let isDepositActive = false;
+        if (params.fundADepositEveryMonth) {
+          isDepositActive = true;
+        } else {
+          const endY = parseInt(params.fundADepositEndYear) || 2027;
+          const endM = parseInt(params.fundADepositEndMonth) || 4;
+          if (y < endY || (y === endY && m <= endM)) {
+            isDepositActive = true;
+          }
+        }
+        depositToA = isDepositActive ? (parseFloat(params.fundADeposit) || 0) : 0;
 
         // Check Yearly Overrides for Income
         if (params.yearlyOverrides[y] && params.yearlyOverrides[y].income !== undefined) {
@@ -531,7 +556,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
           // Phase 2: May 2027 onwards
           income = parseFloat(params.incomePhase2) || 0;
-          depositToA = 0;
 
           // Expense until Dec 2028 vs Jan 2029 onwards
           if (y < 2028 || (y === 2028 && m <= 12)) {
@@ -906,8 +930,9 @@ document.addEventListener('DOMContentLoaded', () => {
       { id: 'selExp2Year', defaultVal: 2029, prefix: 'เริ่มปรับรายจ่าย' },
       { id: 'selCondoYear', defaultVal: 2028, prefix: 'ปีที่ขาย' },
       { id: 'selPFYear', defaultVal: 2032, prefix: 'ปีที่ถอน PF', pfTaxLabel: true },
-      { id: 'selFundADepositYear', defaultVal: 2026, prefix: 'เริ่มปีที่ฝาก' },
-      { id: 'selFundAWithdrawYear', defaultVal: 2030, prefix: 'ปีที่ถอนกองทุน A' },
+      { id: 'selFundADepositEndYear', defaultVal: 2027, prefix: 'ปีที่หยุดฝาก A' },
+      { id: 'selFundAWithdrawYear', defaultVal: 2030, prefix: 'เริ่มถอน A ปี' },
+      { id: 'selFundAWithdrawEndYear', defaultVal: 2030, prefix: 'หยุดถอน A ปี' },
       { id: 'selReserveBInitYear', defaultVal: 2026, prefix: 'ปีที่ตั้งต้น' }
     ];
 
@@ -1047,10 +1072,30 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    const selFundADepositYear = document.getElementById('selFundADepositYear');
-    if (selFundADepositYear) {
-      selFundADepositYear.addEventListener('change', (e) => {
-        params.fundADepositYear = parseInt(e.target.value);
+    // Item 7 Fund A Deposit Listeners
+    const chkFundADepositEveryMonth = document.getElementById('chkFundADepositEveryMonth');
+    const boxFundADepositStop = document.getElementById('boxFundADepositStop');
+    const selFundADepositEndMonth = document.getElementById('selFundADepositEndMonth');
+    const selFundADepositEndYear = document.getElementById('selFundADepositEndYear');
+
+    if (chkFundADepositEveryMonth) {
+      chkFundADepositEveryMonth.addEventListener('change', (e) => {
+        params.fundADepositEveryMonth = e.target.checked;
+        if (boxFundADepositStop) boxFundADepositStop.style.display = e.target.checked ? 'none' : 'flex';
+        runSimulationAndRender();
+      });
+    }
+
+    if (selFundADepositEndMonth) {
+      selFundADepositEndMonth.addEventListener('change', (e) => {
+        params.fundADepositEndMonth = parseInt(e.target.value);
+        runSimulationAndRender();
+      });
+    }
+
+    if (selFundADepositEndYear) {
+      selFundADepositEndYear.addEventListener('change', (e) => {
+        params.fundADepositEndYear = parseInt(e.target.value);
         runSimulationAndRender();
       });
     }
@@ -1059,6 +1104,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const sliderFundAWithdrawAmount = document.getElementById('sliderFundAWithdrawAmount');
     const badgeFundAWithdrawAmount = document.getElementById('badgeFundAWithdrawAmount');
     const selFundAWithdrawYear = document.getElementById('selFundAWithdrawYear');
+    const chkFundAWithdrawEveryYear = document.getElementById('chkFundAWithdrawEveryYear');
+    const boxFundAWithdrawStop = document.getElementById('boxFundAWithdrawStop');
+    const selFundAWithdrawEndYear = document.getElementById('selFundAWithdrawEndYear');
 
     if (sliderFundAWithdrawAmount && badgeFundAWithdrawAmount) {
       sliderFundAWithdrawAmount.addEventListener('input', (e) => {
@@ -1070,7 +1118,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (selFundAWithdrawYear) {
       selFundAWithdrawYear.addEventListener('change', (e) => {
+        params.fundAWithdrawStartYear = parseInt(e.target.value);
         params.fundAWithdrawYear = parseInt(e.target.value);
+        runSimulationAndRender();
+      });
+    }
+    if (chkFundAWithdrawEveryYear) {
+      chkFundAWithdrawEveryYear.addEventListener('change', (e) => {
+        params.fundAWithdrawEveryYear = e.target.checked;
+        if (boxFundAWithdrawStop) boxFundAWithdrawStop.style.display = e.target.checked ? 'none' : 'flex';
+        runSimulationAndRender();
+      });
+    }
+    if (selFundAWithdrawEndYear) {
+      selFundAWithdrawEndYear.addEventListener('change', (e) => {
+        params.fundAWithdrawEndYear = parseInt(e.target.value);
         runSimulationAndRender();
       });
     }
