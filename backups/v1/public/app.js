@@ -433,25 +433,19 @@ document.addEventListener('DOMContentLoaded', () => {
           currentAge = 49 + (y - 2026) - (m < 10 ? 1 : 0);
         }
 
-        // Milestone 1: Dynamic PF Payout (Version 2: 15% Tax for withdrawal before age 55)
+        // Milestone 1: Dynamic PF Payout (Default Month/Year)
         let pfEventThisMonth = false;
-        let pfTaxDeductedThisMonth = 0;
-        let pfNetReceivedThisMonth = 0;
-
         const targetPFYear = parseInt(params.pfYear) || 2032;
         const targetPFMonth = parseInt(params.pfMonth) || 1;
         if (y === targetPFYear && m === targetPFMonth) {
           const rawAmount = parseFloat(params.pfAmount) || 0;
-          const isEarlyPF = targetPFYear < 2032;
-          pfTaxDeductedThisMonth = isEarlyPF ? (rawAmount * 0.15) : 0;
-          pfNetReceivedThisMonth = rawAmount - pfTaxDeductedThisMonth;
 
           if (params.pfDest === 'fundA') {
-            fundA += pfNetReceivedThisMonth;
+            fundA += rawAmount;
           } else if (params.pfDest === 'reserveB') {
-            reserveB += pfNetReceivedThisMonth;
+            reserveB += rawAmount;
           } else {
-            pfBalance += pfNetReceivedThisMonth;
+            pfBalance += rawAmount;
           }
           pfEventThisMonth = true;
         }
@@ -576,7 +570,7 @@ document.addEventListener('DOMContentLoaded', () => {
           condoProceeds: Math.round(condoProceeds),
           totalNetWorth: Math.round(totalNetWorth),
           liquidCashflow: Math.round(liquidCashflow),
-          milestone: condoEventThisMonth ? `ขายคอนโด (+฿${formatCompactCurrency(condoProceeds)} เข้ากองทุน A)` : (pfEventThisMonth ? (targetPFYear < 2032 ? `ถอน PF ก่อนอายุ 55 (สุทธิ ฿${formatCompactCurrency(pfNetReceivedThisMonth)} / หักภาษี 15% ฿${formatCompactCurrency(pfTaxDeductedThisMonth)})` : `รับเงิน PF (+฿${formatCompactCurrency(pfNetReceivedThisMonth)})`) : (fundATransferEvent ? 'เติมเงิน B จาก A' : ''))
+          milestone: condoEventThisMonth ? `ขายคอนโด (+฿${formatCompactCurrency(condoProceeds)} เข้ากองทุน A)` : (pfEventThisMonth ? `รับเงิน PF (+฿${formatCompactCurrency(parseFloat(params.pfAmount) || 0)})` : (fundATransferEvent ? 'เติมเงิน B จาก A' : ''))
         });
       }
     }
@@ -612,42 +606,6 @@ document.addEventListener('DOMContentLoaded', () => {
     renderChart();
     renderTable();
     updateSidebarSummary();
-    updatePFTaxUI();
-  }
-
-  function updatePFTaxUI() {
-    const pfTaxTitle = document.getElementById('pfTaxTitle');
-    const pfTaxBadge = document.getElementById('pfTaxBadge');
-    const pfTaxAmountVal = document.getElementById('pfTaxAmountVal');
-    const pfNetReceivedVal = document.getElementById('pfNetReceivedVal');
-
-    if (!pfTaxTitle || !pfTaxBadge || !pfTaxAmountVal || !pfNetReceivedVal) return;
-
-    const rawPF = parseFloat(params.pfAmount) || 0;
-    const pfYear = parseInt(params.pfYear) || 2032;
-
-    const isEarlyPF = pfYear < 2032; // Under age 55 (before year 2032)
-    const taxRate = isEarlyPF ? 0.15 : 0;
-    const taxAmount = rawPF * taxRate;
-    const netReceived = rawPF - taxAmount;
-
-    if (isEarlyPF) {
-      pfTaxTitle.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color: #F87171;"></i> เงื่อนไขภาษี PF (ถอนก่อนอายุ 55):`;
-      pfTaxBadge.textContent = 'โดนหักภาษี 15%';
-      pfTaxBadge.style.background = 'rgba(239, 68, 68, 0.25)';
-      pfTaxBadge.style.color = '#F87171';
-      pfTaxAmountVal.textContent = '฿' + Math.round(taxAmount).toLocaleString();
-      pfNetReceivedVal.textContent = '฿' + Math.round(netReceived).toLocaleString();
-      pfNetReceivedVal.style.color = '#F87171';
-    } else {
-      pfTaxTitle.innerHTML = `<i class="fa-solid fa-circle-check" style="color: #34D399;"></i> เงื่อนไขภาษี PF (ถอนอายุ 55+):`;
-      pfTaxBadge.textContent = 'ยกเว้นภาษี 0%';
-      pfTaxBadge.style.background = 'rgba(16, 185, 129, 0.2)';
-      pfTaxBadge.style.color = '#34D399';
-      pfTaxAmountVal.textContent = '฿0';
-      pfNetReceivedVal.textContent = '฿' + Math.round(netReceived).toLocaleString();
-      pfNetReceivedVal.style.color = '#34D399';
-    }
   }
 
   function updateSidebarSummary() {
@@ -889,38 +847,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. Income 1 Slider & Year
     const sliderIncome1 = document.getElementById('sliderIncome1');
     const badgeIncome1 = document.getElementById('badgeIncome1');
-    const sliderIncome2 = document.getElementById('sliderIncome2');
-    const badgeIncome2 = document.getElementById('badgeIncome2');
-
     if (sliderIncome1 && badgeIncome1) {
       sliderIncome1.addEventListener('input', (e) => {
         const val = parseFloat(e.target.value);
         badgeIncome1.textContent = val.toLocaleString() + ' ฿/ด.';
         params.incomePhase1 = val;
         if (paramIncomePhase1) paramIncomePhase1.value = val;
-
-        // Constraint V2: Salary phase 2 cannot exceed salary phase 1
-        if (params.incomePhase2 > params.incomePhase1) {
-          params.incomePhase2 = params.incomePhase1;
-          if (sliderIncome2) sliderIncome2.value = params.incomePhase2;
-          if (badgeIncome2) badgeIncome2.textContent = params.incomePhase2.toLocaleString() + ' ฿/ด.';
-          if (paramIncomePhase2) paramIncomePhase2.value = params.incomePhase2;
-        }
-        if (sliderIncome2) sliderIncome2.max = params.incomePhase1;
-
         runSimulationAndRender();
       });
     }
 
     // 2. Income 2 Slider & Year
+    const sliderIncome2 = document.getElementById('sliderIncome2');
+    const badgeIncome2 = document.getElementById('badgeIncome2');
     if (sliderIncome2 && badgeIncome2) {
       sliderIncome2.addEventListener('input', (e) => {
-        let val = parseFloat(e.target.value);
-        // Constraint V2: Salary phase 2 cannot exceed salary phase 1
-        if (val > params.incomePhase1) {
-          val = params.incomePhase1;
-          e.target.value = val;
-        }
+        const val = parseFloat(e.target.value);
         badgeIncome2.textContent = val.toLocaleString() + ' ฿/ด.';
         params.incomePhase2 = val;
         if (paramIncomePhase2) paramIncomePhase2.value = val;

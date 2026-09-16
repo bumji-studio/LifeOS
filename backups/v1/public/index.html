@@ -30,7 +30,7 @@
             <i class="fa-solid fa-brain"></i>
           </div>
           <div class="brand-text">
-            <h2>LifeOS <span style="font-size: 0.65rem; background: var(--primary-gradient); color: #FFF; padding: 2px 6px; border-radius: 6px; font-weight: 700; margin-left: 4px; vertical-align: middle;">v2.0</span></h2>
+            <h2>LifeOS <span style="font-size: 0.65rem; background: var(--primary-gradient); color: #FFF; padding: 2px 6px; border-radius: 6px; font-weight: 700; margin-left: 4px; vertical-align: middle;">v1.0</span></h2>
             <span>Self Architecture System</span>
           </div>
         </div>
@@ -313,37 +313,21 @@
             <!-- 6. เงินถอน PF -->
             <div class="control-item">
               <div class="control-label-row">
-                <label><i class="fa-solid fa-sack-dollar text-pf"></i> 6. เงินถอน PF (หักภาษี 15% ก่อนอายุ 55)</label>
+                <label><i class="fa-solid fa-sack-dollar text-pf"></i> 6. เงินถอน PF</label>
                 <select id="selPFYear" class="year-select">
-                  <option value="2027">ปีที่ถอน: 2027 (อายุ 50 - หักภาษี 15%)</option>
-                  <option value="2028">ปีที่ถอน: 2028 (อายุ 51 - หักภาษี 15%)</option>
-                  <option value="2029">ปีที่ถอน: 2029 (อายุ 52 - หักภาษี 15%)</option>
-                  <option value="2030">ปีที่ถอน: 2030 (อายุ 53 - หักภาษี 15%)</option>
-                  <option value="2031">ปีที่ถอน: 2031 (อายุ 54 - หักภาษี 15%)</option>
-                  <option value="2032" selected>ปีที่ถอน: ม.ค. 2032 (อายุ 55 - ยกเว้นภาษี 0%)</option>
-                  <option value="2035">ปีที่ถอน: 2035 (อายุ 58 - ยกเว้นภาษี 0%)</option>
-                  <option value="2037">ปีที่ถอน: 2037 (อายุ 60 - ยกเว้นภาษี 0%)</option>
+                  <option value="2027">ปีที่ถอน: 2027 (อายุ 50)</option>
+                  <option value="2028">ปีที่ถอน: 2028 (อายุ 51)</option>
+                  <option value="2029">ปีที่ถอน: 2029 (อายุ 52)</option>
+                  <option value="2030">ปีที่ถอน: 2030 (อายุ 53)</option>
+                  <option value="2031">ปีที่ถอน: 2031 (อายุ 54)</option>
+                  <option value="2032" selected>ปีที่ถอน: ม.ค. 2032 (อายุ 55)</option>
+                  <option value="2035">ปีที่ถอน: 2035 (อายุ 58)</option>
+                  <option value="2037">ปีที่ถอน: 2037 (อายุ 60)</option>
                 </select>
               </div>
               <div class="control-input-row">
                 <input type="range" id="sliderPF" min="0" max="10000000" value="2700000" step="100000">
                 <div class="slider-badge" id="badgePF">฿2.7M</div>
-              </div>
-
-              <!-- PF Tax Calculation Status Box for Version 2 -->
-              <div class="pf-tax-box glass-panel" id="pfTaxInfoBox" style="margin-top: 10px; padding: 12px 14px; border-radius: 10px; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); font-size: 0.82rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 600;">
-                  <span id="pfTaxTitle"><i class="fa-solid fa-circle-check" style="color: #34D399;"></i> เงื่อนไขภาษี PF (ถอนอายุ 55+):</span>
-                  <span id="pfTaxBadge" style="background: rgba(16, 185, 129, 0.2); color: #34D399; padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700;">ยกเว้นภาษี 0%</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; margin-top: 8px; color: var(--text-muted);">
-                  <span>ยอดเงินโดนหักภาษี ณ ที่จ่าย (15%):</span>
-                  <strong id="pfTaxAmountVal" style="color: #F87171; font-weight: 700;">฿0</strong>
-                </div>
-                <div style="display: flex; justify-content: space-between; margin-top: 6px; color: var(--text-muted);">
-                  <span>เงินถอนสุทธิที่นำไปคำนวณจริง:</span>
-                  <strong id="pfNetReceivedVal" style="color: #34D399; font-size: 0.95rem; font-weight: 700;">฿2,700,000</strong>
-                </div>
               </div>
             </div>
 
