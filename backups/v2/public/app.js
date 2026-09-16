@@ -880,6 +880,48 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.removeChild(link);
   }
 
+  // Generate Year Select Options (2026 - 2050 / 25 Years)
+  function populateAllYearSelectOptions() {
+    const yearSelects = [
+      { id: 'selIncome1Year', defaultVal: 2026, prefix: 'เริ่มปี' },
+      { id: 'selIncome2Year', defaultVal: 2027, prefix: 'เริ่มลาออก' },
+      { id: 'selExp1Year', defaultVal: 2026, prefix: 'เริ่มปี' },
+      { id: 'selExp2Year', defaultVal: 2029, prefix: 'เริ่มปรับรายจ่าย' },
+      { id: 'selCondoYear', defaultVal: 2028, prefix: 'ปีที่ขาย' },
+      { id: 'selPFYear', defaultVal: 2032, prefix: 'ปีที่ถอน PF', pfTaxLabel: true },
+      { id: 'selFundADepositYear', defaultVal: 2026, prefix: 'เริ่มปีที่ฝาก' },
+      { id: 'selReserveBInitYear', defaultVal: 2026, prefix: 'ปีที่ตั้งต้น' }
+    ];
+
+    yearSelects.forEach(({ id, defaultVal, prefix, pfTaxLabel }) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+
+      const currentVal = parseInt(el.value) || defaultVal;
+      el.innerHTML = '';
+
+      for (let y = 2026; y <= 2050; y++) {
+        const yearIndex = y - 2026;
+        const age = 49 + yearIndex;
+        let label = `${prefix}: ปี ${y} (ปีที่ ${yearIndex} / อายุ ${age})`;
+        if (pfTaxLabel) {
+          if (y < 2032) {
+            label = `${prefix}: ปี ${y} (อายุ ${age} - หักภาษี 15%)`;
+          } else {
+            label = `${prefix}: ปี ${y} (อายุ ${age} - ยกเว้นภาษี 0%)`;
+          }
+        }
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = label;
+        if (currentVal === y) {
+          opt.selected = true;
+        }
+        el.appendChild(opt);
+      }
+    });
+  }
+
   // ==========================================================================
   // 7. Event Listeners for Dashboard Controls
   // ==========================================================================
@@ -950,6 +992,55 @@ document.addEventListener('DOMContentLoaded', () => {
         badgeExp2.textContent = val.toLocaleString() + ' ฿/ด.';
         params.expPhase2 = val;
         if (paramExpPhase2) paramExpPhase2.value = val;
+        runSimulationAndRender();
+      });
+    }
+
+    // Year Select Listeners
+    const selIncome1Year = document.getElementById('selIncome1Year');
+    if (selIncome1Year) {
+      selIncome1Year.addEventListener('change', (e) => {
+        params.income1Year = parseInt(e.target.value);
+        runSimulationAndRender();
+      });
+    }
+
+    const selIncome2Year = document.getElementById('selIncome2Year');
+    if (selIncome2Year) {
+      selIncome2Year.addEventListener('change', (e) => {
+        params.income2Year = parseInt(e.target.value);
+        runSimulationAndRender();
+      });
+    }
+
+    const selExp1Year = document.getElementById('selExp1Year');
+    if (selExp1Year) {
+      selExp1Year.addEventListener('change', (e) => {
+        params.exp1Year = parseInt(e.target.value);
+        runSimulationAndRender();
+      });
+    }
+
+    const selExp2Year = document.getElementById('selExp2Year');
+    if (selExp2Year) {
+      selExp2Year.addEventListener('change', (e) => {
+        params.exp2Year = parseInt(e.target.value);
+        runSimulationAndRender();
+      });
+    }
+
+    const selFundADepositYear = document.getElementById('selFundADepositYear');
+    if (selFundADepositYear) {
+      selFundADepositYear.addEventListener('change', (e) => {
+        params.fundADepositYear = parseInt(e.target.value);
+        runSimulationAndRender();
+      });
+    }
+
+    const selReserveBInitYear = document.getElementById('selReserveBInitYear');
+    if (selReserveBInitYear) {
+      selReserveBInitYear.addEventListener('change', (e) => {
+        params.reserveBInitYear = parseInt(e.target.value);
         runSimulationAndRender();
       });
     }
@@ -1299,6 +1390,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const originalInit = init;
   init = function() {
     originalInit();
+    populateAllYearSelectOptions();
     setupDashboardEventListeners();
     populateTuningInputs();
     runSimulationAndRender();
