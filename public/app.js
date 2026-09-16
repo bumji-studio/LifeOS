@@ -296,6 +296,8 @@ document.addEventListener('DOMContentLoaded', () => {
     pfMonth: 1, // payout month
     pfYear: 2032, // payout year
     pfDest: 'pf', // 'pf' | 'fundA' | 'reserveB'
+    fundAWithdrawYear: 2030, // year to transfer from Fund A into Reserve B
+    fundAWithdrawAmount: 0, // amount to transfer from Fund A into Reserve B
     yearlyOverrides: {} // { 2030: { income: 25000, expense: 20000 } }
   };
 
@@ -475,6 +477,21 @@ document.addEventListener('DOMContentLoaded', () => {
           condoEventThisMonth = true;
         }
 
+        // Milestone 3: Dynamic Manual Withdrawal from Fund A to Reserve B
+        let fundAWithdrawEventThisMonth = false;
+        let actualFundAWithdrawVal = 0;
+        const targetFundAWithdrawYear = parseInt(params.fundAWithdrawYear) || 2030;
+        const targetFundAWithdrawMonth = 1;
+        if (y === targetFundAWithdrawYear && m === targetFundAWithdrawMonth) {
+          const wantAmount = parseFloat(params.fundAWithdrawAmount) || 0;
+          if (wantAmount > 0) {
+            actualFundAWithdrawVal = Math.min(fundA, wantAmount);
+            fundA -= actualFundAWithdrawVal;
+            reserveB += actualFundAWithdrawVal;
+            fundAWithdrawEventThisMonth = true;
+          }
+        }
+
         // Determine Income & Expenses (Yearly Override takes precedence if defined)
         let income = 0;
         let expense = 0;
@@ -576,7 +593,7 @@ document.addEventListener('DOMContentLoaded', () => {
           condoProceeds: Math.round(condoProceeds),
           totalNetWorth: Math.round(totalNetWorth),
           liquidCashflow: Math.round(liquidCashflow),
-          milestone: condoEventThisMonth ? `ขายคอนโด (+฿${formatCompactCurrency(condoProceeds)} เข้ากองทุน A)` : (pfEventThisMonth ? (targetPFYear < 2032 ? `ถอน PF ก่อนอายุ 55 (สุทธิ ฿${formatCompactCurrency(pfNetReceivedThisMonth)} / หักภาษี 15% ฿${formatCompactCurrency(pfTaxDeductedThisMonth)})` : `รับเงิน PF (+฿${formatCompactCurrency(pfNetReceivedThisMonth)})`) : (fundATransferEvent ? 'เติมเงิน B จาก A' : ''))
+          milestone: condoEventThisMonth ? `ขายคอนโด (+฿${formatCompactCurrency(condoProceeds)} เข้ากองทุน A)` : (pfEventThisMonth ? (targetPFYear < 2032 ? `ถอน PF ก่อนอายุ 55 (สุทธิ ฿${formatCompactCurrency(pfNetReceivedThisMonth)} / หักภาษี 15% ฿${formatCompactCurrency(pfTaxDeductedThisMonth)})` : `รับเงิน PF (+฿${formatCompactCurrency(pfNetReceivedThisMonth)})`) : (fundAWithdrawEventThisMonth ? `ถอนกองทุน A ย้ายเข้าสะสมทรัพย์ B (+฿${formatCompactCurrency(actualFundAWithdrawVal)})` : (fundATransferEvent ? 'เติมเงิน B จาก A (ขาดแคลน)' : '')))
         });
       }
     }
@@ -890,6 +907,7 @@ document.addEventListener('DOMContentLoaded', () => {
       { id: 'selCondoYear', defaultVal: 2028, prefix: 'ปีที่ขาย' },
       { id: 'selPFYear', defaultVal: 2032, prefix: 'ปีที่ถอน PF', pfTaxLabel: true },
       { id: 'selFundADepositYear', defaultVal: 2026, prefix: 'เริ่มปีที่ฝาก' },
+      { id: 'selFundAWithdrawYear', defaultVal: 2030, prefix: 'ปีที่ถอนกองทุน A' },
       { id: 'selReserveBInitYear', defaultVal: 2026, prefix: 'ปีที่ตั้งต้น' }
     ];
 
@@ -1033,6 +1051,26 @@ document.addEventListener('DOMContentLoaded', () => {
     if (selFundADepositYear) {
       selFundADepositYear.addEventListener('change', (e) => {
         params.fundADepositYear = parseInt(e.target.value);
+        runSimulationAndRender();
+      });
+    }
+
+    // 7.2. Fund A Manual Withdrawal Slider & Year
+    const sliderFundAWithdrawAmount = document.getElementById('sliderFundAWithdrawAmount');
+    const badgeFundAWithdrawAmount = document.getElementById('badgeFundAWithdrawAmount');
+    const selFundAWithdrawYear = document.getElementById('selFundAWithdrawYear');
+
+    if (sliderFundAWithdrawAmount && badgeFundAWithdrawAmount) {
+      sliderFundAWithdrawAmount.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        badgeFundAWithdrawAmount.textContent = formatCompactCurrency(val);
+        params.fundAWithdrawAmount = val;
+        runSimulationAndRender();
+      });
+    }
+    if (selFundAWithdrawYear) {
+      selFundAWithdrawYear.addEventListener('change', (e) => {
+        params.fundAWithdrawYear = parseInt(e.target.value);
         runSimulationAndRender();
       });
     }
@@ -1305,6 +1343,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sliderPF) sliderPF.value = params.pfAmount;
     if (badgePF) badgePF.textContent = formatCompactCurrency(params.pfAmount);
     if (selPFYear) selPFYear.value = params.pfYear;
+
+    const sliderFundAWithdrawAmount = document.getElementById('sliderFundAWithdrawAmount');
+    const badgeFundAWithdrawAmount = document.getElementById('badgeFundAWithdrawAmount');
+    const selFundAWithdrawYear = document.getElementById('selFundAWithdrawYear');
+    if (sliderFundAWithdrawAmount) sliderFundAWithdrawAmount.value = params.fundAWithdrawAmount;
+    if (badgeFundAWithdrawAmount) badgeFundAWithdrawAmount.textContent = formatCompactCurrency(params.fundAWithdrawAmount);
+    if (selFundAWithdrawYear) selFundAWithdrawYear.value = params.fundAWithdrawYear;
   }
 
   function renderYearlyOverrideTable() {

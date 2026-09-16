@@ -352,14 +352,26 @@
               <div class="control-label-row">
                 <label><i class="fa-solid fa-chart-line text-fund-a"></i> 7. เงินฝากเข้ากองทุน (A)/เดือน</label>
                 <select id="selFundADepositYear" class="year-select">
-                  <option value="2026" selected>ช่วงปีฝาก: 2026 - 2027</option>
-                  <option value="2028">ช่วงปีฝาก: 2026 - 2028</option>
-                  <option value="all">ฝากต่อเนื่องทุกปี</option>
+                  <!-- Populated dynamically 2026-2050 -->
                 </select>
               </div>
               <div class="control-input-row">
                 <input type="range" id="sliderFundADeposit" min="0" max="100000" value="30000" step="2000">
                 <div class="slider-badge" id="badgeFundADeposit">30,000 ฿/ด.</div>
+              </div>
+            </div>
+
+            <!-- 7.2. ถอนเงินจากกองทุน (A) ย้ายเข้าสะสมทรัพย์ (B) -->
+            <div class="control-item" style="border: 1px dashed rgba(16, 185, 129, 0.4); background: rgba(16, 185, 129, 0.05);">
+              <div class="control-label-row">
+                <label><i class="fa-solid fa-hand-holding-dollar text-fund-a"></i> 7.2 ถอนเงินกองทุน (A) ย้ายเข้าสะสมทรัพย์ (B)</label>
+                <select id="selFundAWithdrawYear" class="year-select">
+                  <!-- Populated dynamically 2026-2050 -->
+                </select>
+              </div>
+              <div class="control-input-row">
+                <input type="range" id="sliderFundAWithdrawAmount" min="0" max="10000000" value="0" step="50000">
+                <div class="slider-badge" id="badgeFundAWithdrawAmount">฿0</div>
               </div>
             </div>
 
