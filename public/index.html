@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LifeOS - Companion AI & Financial Simulator</title>
+  
+  <!-- Google Fonts: Plus Jakarta Sans & Prompt -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="brand">
+          <div class="brand-icon">
+            <i class="fa-solid fa-brain"></i>
+          </div>
+          <div class="brand-text">
+            <h2>LifeOS</h2>
+            <span>Self Architecture System</span>
+          </div>
+        </div>
+        
+        <!-- Navigation Tabs in Sidebar -->
+        <nav class="sidebar-nav">
+          <button class="nav-item active" id="navChatBtn" data-target="chatViewport">
+            <i class="fa-solid fa-comments"></i>
+            <span>แชท Companion</span>
+          </button>
+          <button class="nav-item" id="navFinanceBtn" data-target="financeViewport">
+            <i class="fa-solid fa-chart-line"></i>
+            <span>วางแผนการเงิน (2026-2050)</span>
+          </button>
+        </nav>
+      </div>
+
+      <div class="sidebar-content" id="sidebarContentChat">
+        <button class="new-chat-btn" id="newChatBtn" style="margin-bottom: 16px;">
+          <i class="fa-solid fa-plus"></i>
+          <span>แชทใหม่</span>
+        </button>
+        <div class="history-label">ประวัติการสนทนา</div>
+        <div class="history-list" id="historyList">
+          <div class="history-item active">
+            <i class="fa-regular fa-message"></i>
+            <span class="history-title">พื้นที่แกะความคิด</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-content" id="sidebarContentFinance" style="display: none;">
+        <div class="history-label">พารามิเตอร์หลัก</div>
+        <div class="quick-summary-box">
+          <div class="qs-item">
+            <span class="qs-label">อายุปัจจุบัน</span>
+            <span class="qs-val">49 ปี (ต.ค. 2026)</span>
+          </div>
+          <div class="qs-item">
+            <span class="qs-label">เป้าหมายจำลอง</span>
+            <span class="qs-val">ถึงปี 2050 (อายุ 73)</span>
+          </div>
+          <div class="qs-item">
+            <span class="qs-label">ผลตอบแทน กองทุน A</span>
+            <span class="qs-val text-accent" id="sideYieldVal">10% / ปี</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="user-profile-card" id="userProfileCard">
+          <img src="https://api.dicebear.com/7.x/bottts/svg?seed=guest" alt="User Avatar" class="user-avatar" id="userAvatar">
+          <div class="user-info">
+            <h4 id="userName">ผู้เยี่ยมชม</h4>
+            <span id="userStatus">ระบุชื่อเล่นเพื่อเริ่มคุย</span>
+          </div>
+          <button class="auth-btn" id="changeNameBtn" title="เปลี่ยนชื่อเล่น">
+            <i class="fa-solid fa-pen"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 1. Main Chat Viewport -->
+    <main class="chat-viewport view-section active" id="chatViewport">
+      <!-- Top Navbar -->
+      <header class="top-navbar">
+        <div class="nav-left">
+          <button class="sidebar-toggle" id="sidebarToggleChat">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <div class="current-chat-title">
+            <span class="status-indicator online"></span>
+            <h3>LifeOS Companion</h3>
+          </div>
+        </div>
+        <div class="nav-right">
+          <button class="icon-btn" id="clearChatBtn" title="ล้างประวัติแชท">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- Chat Feed -->
+      <div class="chat-feed" id="chatFeed">
+        
+        <!-- Welcome Hero Banner & Name Entry Form -->
+        <div class="welcome-card" id="welcomeCard">
+          <div class="welcome-badge">
+            <i class="fa-solid fa-heart"></i> LifeOS Companion
+          </div>
+          <h1>ยินดีต้อนรับสู่ LifeOS ครับ</h1>
+          <p>พื้นที่ปลอดภัยสำหรับรับฟังและช่วยแกะปมความคิดของคุณ... ก่อนเริ่มคุยกัน อยากให้ LifeOS เรียกร้องคุณด้วยชื่อเล่นว่าอะไรดีครับ?</p>
+          
+          <form class="name-entry-form" id="nameEntryForm">
+            <div class="name-input-wrapper">
+              <i class="fa-solid fa-user-tag name-icon"></i>
+              <input type="text" id="nicknameInput" placeholder="กรอกชื่อเล่นของคุณที่นี่..." required autocomplete="off">
+              <button type="submit" class="start-journey-btn">
+                <span>เริ่มคุยกันเลย</span>
+                <i class="fa-solid fa-arrow-right"></i>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Dynamic Chat Messages Container -->
+        <div class="messages-container" id="messagesContainer"></div>
+      </div>
+
+      <!-- Input Bar -->
+      <footer class="input-area">
+        <div class="input-wrapper">
+          <textarea id="userInput" placeholder="พิมพ์ข้อความของคุณที่นี่... (Press Enter to Send)" rows="1"></textarea>
+          <button id="sendBtn" class="send-btn" disabled>
+            <i class="fa-solid fa-paper-plane"></i>
+          </button>
+        </div>
+        <div class="input-footer-note">
+          LifeOS คือพื้นที่ปลอดภัยในการพูดคุยและสะท้อนความคิดของคุณ
+        </div>
+      </footer>
+    </main>
+
+    <!-- 2. Main Financial Simulator Viewport -->
+    <main class="finance-viewport view-section" id="financeViewport" style="display: none;">
+      <!-- Top Navbar for Financial Dashboard -->
+      <header class="top-navbar">
+        <div class="nav-left">
+          <button class="sidebar-toggle" id="sidebarToggleFinance">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <div class="current-chat-title">
+            <i class="fa-solid fa-vault text-accent"></i>
+            <h3>Financial Simulator (2026 - 2050)</h3>
+          </div>
+        </div>
+        <div class="nav-right">
+          <button class="btn-secondary" id="toggleTuneBtn">
+            <i class="fa-solid fa-sliders"></i>
+            <span>ปรับแต่งตัวแปร</span>
+          </button>
+          <button class="btn-primary" id="exportCsvBtn">
+            <i class="fa-solid fa-file-csv"></i>
+            <span>ส่งออก CSV</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Dashboard Scrollable Container -->
+      <div class="finance-dashboard-container">
+        
+        <!-- Top 3 Header Summary Stats Cards -->
+        <section class="top-stats-grid">
+          <div class="stat-card glass-panel">
+            <h1 class="stat-val" id="statCondoNet">฿3.0M</h1>
+            <span class="stat-label">เงินขายคอนโดสุทธิ</span>
+          </div>
+          <div class="stat-card glass-panel">
+            <h1 class="stat-val" id="statPF">฿2.7M</h1>
+            <span class="stat-label">เงินก้อน PF (อายุ 55)</span>
+          </div>
+          <div class="stat-card glass-panel text-glow-primary">
+            <h1 class="stat-val" id="statNetWorthTarget">฿10.2M</h1>
+            <span class="stat-label">ประมาณการสินทรัพย์รวมปลายทาง</span>
+          </div>
+        </section>
+
+        <!-- Financial Projection Chart Card -->
+        <section class="chart-card glass-panel">
+          <div class="chart-header">
+            <div class="chart-title">
+              <h3>มูลค่าสินทรัพย์ (บาท)</h3>
+            </div>
+            <div class="chart-view-toggle">
+              <button class="view-btn active" id="chartViewYearly">รายปี (ปีที่ N)</button>
+              <button class="view-btn" id="chartViewMonthly">รายเดือน</button>
+            </div>
+          </div>
+
+          <div class="chart-wrapper">
+            <canvas id="financeChart"></canvas>
+          </div>
+
+          <div class="chart-footer-label">
+            <span>จำนวนปีข้างหน้า (ปี 2026 เป็นปี 0 / อายุ 49)</span>
+          </div>
+        </section>
+
+        <!-- Interactive Model Controls with Start Year Selection & Amount Sliders -->
+        <section class="model-controls-card glass-panel">
+          <div class="controls-header">
+            <h2>ปรับแต่งตัวแปรแบบจำลอง (เลือกปีตั้งต้น & แถบจำนวนเงิน)</h2>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">เลือกปีที่เริ่มต้นเกิดรายการ และปรับเลื่อนแถบจำนวนเงินเพื่อคำนวณจำลองผลลัพธ์ทันที</span>
+          </div>
+
+          <div class="controls-grid">
+            <!-- 1. เงินเดือนทำงานช่วงแรก -->
+            <div class="control-item">
+              <div class="control-label-row">
+                <label><i class="fa-solid fa-briefcase text-accent"></i> 1. เงินเดือนทำงานช่วงแรก</label>
+                <select id="selIncome1Year" class="year-select">
+                  <option value="2026" selected>เริ่มปี 2026 (ปี 0 / อายุ 49)</option>
+                  <option value="2027">เริ่มปี 2027 (ปี 1)</option>
+                </select>
+              </div>
+              <div class="control-input-row">
+                <input type="range" id="sliderIncome1" min="0" max="300000" value="95000" step="5000">
+                <div class="slider-badge" id="badgeIncome1">95,000 ฿/ด.</div>
+              </div>
+            </div>
+
+            <!-- 2. เงินเดือนหลังลาออก -->
+            <div class="control-item">
+              <div class="control-label-row">
+                <label><i class="fa-solid fa-user-doctor text-accent"></i> 2. เงินเดือนหลังลาออก</label>
+                <select id="selIncome2Year" class="year-select">
+                  <option value="2027" selected>เริ่มลาออก: พ.ค. 2027 (ปี 1)</option>
+                  <option value="2028">เริ่มลาออก: ปี 2028 (ปี 2)</option>
+                  <option value="2029">เริ่มลาออก: ปี 2029 (ปี 3)</option>
+                  <option value="2030">เริ่มลาออก: ปี 2030 (ปี 4)</option>
+                </select>
+              </div>
+              <div class="control-input-row">
+                <input type="range" id="sliderIncome2" min="0" max="100000" value="10000" step="1000">
+                <div class="slider-badge" id="badgeIncome2">10,000 ฿/ด.</div>
+              </div>
+            </div>
+
+            <!-- 3. เงินรายจ่ายช่วงผ่อนคอนโด -->
+            <div class="control-item">
+              <div class="control-label-row">
+                <label><i class="fa-solid fa-credit-card text-accent"></i> 3. เงินรายจ่าย (ช่วงผ่อนคอนโด)</label>
+                <select id="selExp1Year" class="year-select">
+                  <option value="2026" selected>เริ่มปี 2026 (ปี 0)</option>
+                  <option value="2027">เริ่มปี 2027 (ปี 1)</option>
+                </select>
+              </div>
+              <div class="control-input-row">
+                <input type="range" id="sliderExp1" min="0" max="200000" value="60000" step="5000">
+                <div class="slider-badge" id="badgeExp1">60,000 ฿/ด.</div>
+              </div>
+            </div>
+
+            <!-- 4. รายจ่ายหลังหมดภาระคอนโด -->
+            <div class="control-item">
+              <div class="control-label-row">
+                <label><i class="fa-solid fa-house-circle-check text-accent"></i> 4. รายจ่ายหลังหมดภาระคอนโด</label>
+                <select id="selExp2Year" class="year-select">
+                  <option value="2029" selected>เริ่มลดรายจ่าย: ม.ค. 2029 (ปี 3)</option>
+                  <option value="2028">เริ่มลดรายจ่าย: ปี 2028 (ปี 2)</option>
+                  <option value="2030">เริ่มลดรายจ่าย: ปี 2030 (ปี 4)</option>
+                  <option value="2031">เริ่มลดรายจ่าย: ปี 2031 (ปี 5)</option>
+                </select>
+              </div>
+              <div class="control-input-row">
+                <input type="range" id="sliderExp2" min="0" max="100000" value="15000" step="1000">
+                <div class="slider-badge" id="badgeExp2">15,000 ฿/ด.</div>
+              </div>
+            </div>
+
+            <!-- 5. เงินขายคอนโด -->
+            <div class="control-item">
+              <div class="control-label-row">
+                <label><i class="fa-solid fa-building text-summary"></i> 5. เงินขายคอนโดสุทธิ</label>
+                <select id="selCondoYear" class="year-select">
+                  <option value="2026">ปีที่ขาย: 2026 (ปี 0)</option>
+                  <option value="2027">ปีที่ขาย: 2027 (ปี 1)</option>
+                  <option value="2028" selected>ปีที่ขาย: ธ.ค. 2028 (ปี 2)</option>
+                  <option value="2029">ปีที่ขาย: 2029 (ปี 3)</option>
+                  <option value="2030">ปีที่ขาย: 2030 (ปี 4)</option>
+                </select>
+              </div>
+              <div class="control-input-row">
+                <input type="range" id="sliderCondoNet" min="0" max="10000000" value="3000000" step="100000">
+                <div class="slider-badge" id="badgeCondoNet">฿3.0M</div>
+              </div>
+            </div>
+
+            <!-- 6. เงินถอน PF -->
+            <div class="control-item">
+              <div class="control-label-row">
+                <label><i class="fa-solid fa-sack-dollar text-pf"></i> 6. เงินถอน PF</label>
+                <select id="selPFYear" class="year-select">
+                  <option value="2027">ปีที่ถอน: 2027 (อายุ 50)</option>
+                  <option value="2028">ปีที่ถอน: 2028 (อายุ 51)</option>
+                  <option value="2029">ปีที่ถอน: 2029 (อายุ 52)</option>
+                  <option value="2030">ปีที่ถอน: 2030 (อายุ 53)</option>
+                  <option value="2031">ปีที่ถอน: 2031 (อายุ 54)</option>
+                  <option value="2032" selected>ปีที่ถอน: ม.ค. 2032 (อายุ 55)</option>
+                  <option value="2035">ปีที่ถอน: 2035 (อายุ 58)</option>
+                  <option value="2037">ปีที่ถอน: 2037 (อายุ 60)</option>
+                </select>
+              </div>
+              <div class="control-input-row">
+                <input type="range" id="sliderPF" min="0" max="10000000" value="2700000" step="100000">
+                <div class="slider-badge" id="badgePF">฿2.7M</div>
+              </div>
+            </div>
+
+            <!-- 7. เงินฝากเข้ากองทุน (A) -->
+            <div class="control-item">
+              <div class="control-label-row">
+                <label><i class="fa-solid fa-chart-line text-fund-a"></i> 7. เงินฝากเข้ากองทุน (A)/เดือน</label>
+                <select id="selFundADepositYear" class="year-select">
+                  <option value="2026" selected>ช่วงปีฝาก: 2026 - 2027</option>
+                  <option value="2028">ช่วงปีฝาก: 2026 - 2028</option>
+                  <option value="all">ฝากต่อเนื่องทุกปี</option>
+                </select>
+              </div>
+              <div class="control-input-row">
+                <input type="range" id="sliderFundADeposit" min="0" max="100000" value="30000" step="2000">
+                <div class="slider-badge" id="badgeFundADeposit">30,000 ฿/ด.</div>
+              </div>
+            </div>
+
+            <!-- 8. เงินเก็บเข้าสะสมทรัพย์ (B) -->
+            <div class="control-item">
+              <div class="control-label-row">
+                <label><i class="fa-solid fa-piggy-bank text-reserve-b"></i> 8. เงินเก็บสำรองสะสมทรัพย์ (B)</label>
+                <select id="selReserveBInitYear" class="year-select">
+                  <option value="2026" selected>ปีที่ตั้งต้น: 2026 (ปี 0)</option>
+                  <option value="2027">ปีที่ตั้งต้น: 2027 (ปี 1)</option>
+                </select>
+              </div>
+              <div class="control-input-row">
+                <input type="range" id="sliderReserveBInit" min="0" max="2000000" value="300000" step="50000">
+                <div class="slider-badge" id="badgeReserveBInit">฿300k</div>
+              </div>
+            </div>
+
+            <!-- 9. ผลตอบแทนกองทุน (A) % ต่อปี -->
+            <div class="control-item">
+              <div class="control-label-row">
+                <label><i class="fa-solid fa-percent text-fund-a"></i> 9. ผลตอบแทนกองทุน (A) ต่อปี (%)</label>
+              </div>
+              <div class="control-input-row">
+                <input type="range" id="sliderFundAYield" min="0" max="20" value="10.0" step="0.5">
+                <div class="slider-badge" id="badgeFundAYield">10.0%</div>
+              </div>
+            </div>
+
+            <!-- 10. กรอบระยะเวลาจำลอง (ปี) -->
+            <div class="control-item">
+              <div class="control-label-row">
+                <label><i class="fa-solid fa-calendar-range text-accent"></i> 10. กรอบระยะเวลาจำลอง (ปี)</label>
+              </div>
+              <div class="control-input-row">
+                <input type="range" id="sliderHorizon" min="1" max="24" value="24" step="1">
+                <div class="slider-badge" id="badgeHorizon">24 ปี</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="model-footnote" id="modelFootnote">
+            *คำนวณเงินเฟ้อและผลตอบแทนเฉลี่ย 10% ทบต้นของเงินลงทุนในกองทุน (A) พร้อมบันทึกการเติมเงินคอนโด 3 ล้าน (ปีที่ 2 / 2028) และ PF 2.7 ล้าน (ปีที่ 6 / 2032)
+          </div>
+        </section>
+
+        <!-- Advanced Tuning Drawer (Collapsible) -->
+        <section class="tuning-drawer glass-panel" id="tuningDrawer" style="display: none;">
+          <div class="drawer-header">
+            <div>
+              <h3><i class="fa-solid fa-sliders text-accent"></i> ปรับแต่งตัวแปรแบบละเอียด (Advanced Parameters & Date Overrides)</h3>
+            </div>
+            <button class="btn-reset" id="resetParamsBtn"><i class="fa-solid fa-rotate-left"></i> รีเซ็ตเป็นค่าเริ่มต้น</button>
+          </div>
+          
+          <div class="tuning-grid">
+            <!-- 1. Income & Expenses -->
+            <div class="tune-group">
+              <h4><i class="fa-solid fa-money-bill-transfer text-accent"></i> 1. รายได้ & ค่าใช้จ่าย</h4>
+              <div class="tune-item">
+                <label>รายได้ ต.ค. 2026 - เม.ย. 2027 (บาท/เดือน):</label>
+                <input type="number" id="paramIncomePhase1" value="95000" step="5000">
+              </div>
+              <div class="tune-item">
+                <label>รายได้ ตั้งแต่ พ.ค. 2027 เป็นต้นไป (บาท/เดือน):</label>
+                <input type="number" id="paramIncomePhase2" value="10000" step="1000">
+              </div>
+              <div class="tune-item">
+                <label>ค่าใช้จ่ายช่วงแรก ต.ค. 2026 - ธ.ค. 2028 (บาท/เดือน):</label>
+                <input type="number" id="paramExpPhase1" value="60000" step="5000">
+              </div>
+              <div class="tune-item">
+                <label>ค่าใช้จ่ายช่วงหลัง ตั้งแต่ ม.ค. 2029 (บาท/เดือน):</label>
+                <input type="number" id="paramExpPhase2" value="15000" step="1000">
+              </div>
+            </div>
+
+            <!-- 2. Condo & PF -->
+            <div class="tune-group">
+              <h4><i class="fa-solid fa-building text-summary"></i> 2. การขายคอนโด & เงิน PF</h4>
+              <div class="tune-item">
+                <label>ราคาขายคอนโด (บาท):</label>
+                <input type="number" id="paramCondoGross" value="4000000" step="500000">
+              </div>
+              <div class="tune-item">
+                <label>หักหนี้ธนาคารคงเหลือ (บาท):</label>
+                <input type="number" id="paramCondoDebt" value="1000000" step="100000">
+              </div>
+              <div class="tune-item">
+                <label>เดือน/ปีที่ขายคอนโด:</label>
+                <div style="display:flex; gap:8px;">
+                  <select id="paramCondoMonth" style="flex:1; background:rgba(30,41,59,0.8); color:#FFF; padding:8px; border-radius:8px; border:1px solid var(--border-color);">
+                    <option value="12" selected>ธันวาคม (12)</option>
+                    <option value="1">มกราคม (01)</option>
+                    <option value="2">กุมภาพันธ์ (02)</option>
+                    <option value="3">มีนาคม (03)</option>
+                    <option value="4">เมษายน (04)</option>
+                    <option value="5">พฤษภาคม (05)</option>
+                    <option value="6">มิถุนายน (06)</option>
+                    <option value="7">กรกฎาคม (07)</option>
+                    <option value="8">สิงหาคม (08)</option>
+                    <option value="9">กันยายน (09)</option>
+                    <option value="10">ตุลาคม (10)</option>
+                    <option value="11">พฤศจิกายน (11)</option>
+                  </select>
+                  <input type="number" id="paramCondoYear" value="2028" min="2026" max="2050" style="flex:1;">
+                </div>
+              </div>
+              <div class="tune-item">
+                <label>เงินสุทธิคอนโดนำไปฝากที่:</label>
+                <select id="paramCondoDest" style="background:rgba(30,41,59,0.8); color:#FFF; padding:8px; border-radius:8px; border:1px solid var(--border-color);">
+                  <option value="fundA">ฝากเข้ากองทุน (A) ทำกำไรต่อ</option>
+                  <option value="reserveB">ฝากเข้าเงินสำรอง (B)</option>
+                </select>
+              </div>
+              <hr style="border:0; border-top:1px dashed var(--border-color); margin:6px 0;">
+              <div class="tune-item">
+                <label>เงิน PF ที่ได้รับ (บาท):</label>
+                <input type="number" id="paramPFAmount" value="2700000" step="100000">
+              </div>
+              <div class="tune-item">
+                <label>เดือน/ปีที่รับเงิน PF (เกษียณ):</label>
+                <div style="display:flex; gap:8px;">
+                  <select id="paramPFMonth" style="flex:1; background:rgba(30,41,59,0.8); color:#FFF; padding:8px; border-radius:8px; border:1px solid var(--border-color);">
+                    <option value="1" selected>มกราคม (01)</option>
+                    <option value="2">กุมภาพันธ์ (02)</option>
+                    <option value="3">มีนาคม (03)</option>
+                    <option value="4">เมษายน (04)</option>
+                    <option value="5">พฤษภาคม (05)</option>
+                    <option value="6">มิถุนายน (06)</option>
+                    <option value="7">กรกฎาคม (07)</option>
+                    <option value="8">สิงหาคม (08)</option>
+                    <option value="9">กันยายน (09)</option>
+                    <option value="10">ตุลาคม (10)</option>
+                    <option value="11">พฤศจิกายน (11)</option>
+                    <option value="12">ธันวาคม (12)</option>
+                  </select>
+                  <input type="number" id="paramPFYear" value="2032" min="2026" max="2050" style="flex:1;">
+                </div>
+              </div>
+              <div class="tune-item">
+                <label>เงิน PF นำไปฝากที่:</label>
+                <select id="paramPFDest" style="background:rgba(30,41,59,0.8); color:#FFF; padding:8px; border-radius:8px; border:1px solid var(--border-color);">
+                  <option value="pf">แยกบัญชี PF สภาพคล่อง</option>
+                  <option value="fundA">ฝากเข้ากองทุน (A) ทำกำไรต่อ</option>
+                  <option value="reserveB">ฝากเข้าเงินสำรอง (B)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- 3. Fund A & Reserve B -->
+            <div class="tune-group">
+              <h4><i class="fa-solid fa-chart-line text-fund-a"></i> 3. กองทุน (A) & สำรอง (B)</h4>
+              <div class="tune-item">
+                <label>เงินกองทุน (A) ตั้งต้น (บาท):</label>
+                <input type="number" id="paramFundAInit" value="500000" step="50000">
+              </div>
+              <div class="tune-item">
+                <label>ผลตอบแทนกองทุน (A) (% ต่อปี):</label>
+                <input type="number" id="paramFundAYield" value="10" step="0.5">
+              </div>
+              <div class="tune-item">
+                <label>เงินฝากเข้ากองทุน (A) (ต.ค.26-เม.ย.27):</label>
+                <input type="number" id="paramFundADeposit" value="30000" step="5000">
+              </div>
+              <div class="tune-item">
+                <label>เงินสำรอง (B) ตั้งต้น (บาท):</label>
+                <input type="number" id="paramReserveBInit" value="300000" step="50000">
+              </div>
+              <div class="tune-item">
+                <label>ถอนกองทุน (A) เติม (B) ครั้งละ:</label>
+                <input type="number" id="paramFundATransfer" value="200000" step="50000">
+              </div>
+            </div>
+
+            <!-- 4. Yearly Custom Overrides Table -->
+            <div class="tune-group" style="grid-column: 1 / -1;">
+              <h4><i class="fa-solid fa-calendar-days text-accent"></i> 4. กำหนด รายได้ & ค่าใช้จ่าย รายปีอิสระ (Custom Yearly Overrides 2026 - 2050)</h4>
+              <span style="font-size:0.78rem; color:var(--text-muted); margin-bottom:8px; display:block;">
+                คุณสามารถพิมพ์แก้ไข รายได้/เดือน และ ค่าใช้จ่าย/เดือน แยกเฉพาะรายปีได้ที่ตารางด้านล่างนี้ ระบบจะนำค่าที่คุณปรับไปคำนวณแทนค่าเบสไลน์โดยอัตโนมัติ
+              </span>
+              
+              <div style="max-height: 280px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 10px;">
+                <table class="finance-table" style="font-size: 0.8rem; text-align: center;">
+                  <thead>
+                    <tr>
+                      <th style="text-align: center;">ปี (อายุ)</th>
+                      <th style="text-align: center;">รายได้/เดือน (บาท)</th>
+                      <th style="text-align: center;">ค่าใช้จ่าย/เดือน (บาท)</th>
+                      <th style="text-align: center;">ส่วนต่าง/เดือน</th>
+                    </tr>
+                  </thead>
+                  <tbody id="yearlyOverrideTbody">
+                    <!-- Dynamic Yearly Overrides Rows -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Financial Projection Chart Card -->
+        <section class="chart-card glass-panel">
+          <div class="chart-header">
+            <div class="chart-title">
+              <h3><i class="fa-solid fa-chart-area"></i> กราฟแสดงแนวโน้มเงินคงเหลือและสินทรัพย์ (2026 - 2050)</h3>
+              <span class="chart-subtitle">จำลองกระแสเงินสดรายเดือนพร้อมสเกลอายุ</span>
+            </div>
+            <div class="chart-view-toggle">
+              <button class="view-btn active" id="chartViewMonthly">รายเดือน</button>
+              <button class="view-btn" id="chartViewYearly">รายปี</button>
+            </div>
+          </div>
+
+          <div class="chart-wrapper">
+            <canvas id="financeChart"></canvas>
+          </div>
+        </section>
+
+        <!-- Data Breakdown Table Card -->
+        <section class="table-card glass-panel">
+          <div class="table-header">
+            <h3><i class="fa-solid fa-table-list"></i> ตารางแสดงรายละเอียดรายปี / รายเดือน</h3>
+            <div class="table-controls">
+              <span class="table-info-badge" id="tableRecordCount">แสดง 0 รายการ</span>
+            </div>
+          </div>
+
+          <div class="table-wrapper">
+            <table class="finance-table" id="financeTable">
+              <thead>
+                <tr>
+                  <th>เดือน/ปี</th>
+                  <th>อายุ</th>
+                  <th>รายได้</th>
+                  <th>ค่าใช้จ่าย</th>
+                  <th>กองทุน (A)</th>
+                  <th>เงินสำรอง (B)</th>
+                  <th>เงิน PF</th>
+                  <th>เงินขายคอนโด</th>
+                  <th>กระแสเงินสด</th>
+                  <th>รวมทรัพย์สินสุทธิ</th>
+                </tr>
+              </thead>
+              <tbody id="financeTableBody">
+                <!-- Dynamic Rows Generated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+  </div>
+
+  <!-- JavaScript Main App -->
+  <script src="app.js"></script>
+</body>
+</html>
+
