@@ -187,17 +187,25 @@
       <!-- Dashboard Scrollable Container -->
       <div class="finance-dashboard-container">
         
+        <!-- Section Header Bar with Single Global Year Selector -->
+        <div class="stats-control-header">
+          <div class="stats-title-group">
+            <i class="fa-solid fa-chart-pie text-accent"></i>
+            <span class="stats-title-text">สรุปภาพรวมสินทรัพย์และกระแสเงินสด</span>
+          </div>
+          <div class="global-year-picker-wrapper">
+            <span class="global-picker-label"><i class="fa-solid fa-calendar-days text-accent"></i> แสดงข้อมูล ณ สิ้นปี:</span>
+            <select id="statGlobalYearSelect" class="global-year-select">
+              <!-- Dynamically populated 2026-2050 -->
+            </select>
+          </div>
+        </div>
+
         <!-- Top Header Summary Stats Cards -->
         <section class="top-stats-grid">
           <div class="stat-card glass-panel">
             <div class="stat-card-header">
               <span class="stat-label">เงินรายได้รวม</span>
-              <div class="stat-year-picker">
-                <span class="stat-picker-label">ณ สิ้นปี:</span>
-                <select id="statIncomeYearSelect" class="stat-year-select">
-                  <!-- Dynamically populated 2026-2050 -->
-                </select>
-              </div>
             </div>
             <h1 class="stat-val" id="statTotalIncome" style="color: #38BDF8;">฿0</h1>
             <span class="stat-subtext" id="statIncomeSubtext">สะสมถึง ธ.ค. 2050</span>
@@ -206,12 +214,6 @@
           <div class="stat-card glass-panel">
             <div class="stat-card-header">
               <span class="stat-label">เงินรายจ่ายรวม</span>
-              <div class="stat-year-picker">
-                <span class="stat-picker-label">ณ สิ้นปี:</span>
-                <select id="statExpenseYearSelect" class="stat-year-select">
-                  <!-- Dynamically populated 2026-2050 -->
-                </select>
-              </div>
             </div>
             <h1 class="stat-val" id="statTotalExpense" style="color: #F87171;">฿0</h1>
             <span class="stat-subtext" id="statExpenseSubtext">สะสมถึง ธ.ค. 2050</span>
@@ -220,12 +222,6 @@
           <div class="stat-card glass-panel">
             <div class="stat-card-header">
               <span class="stat-label">เงินกองทุน (A) รวม</span>
-              <div class="stat-year-picker">
-                <span class="stat-picker-label">ณ สิ้นปี:</span>
-                <select id="statFundAYearSelect" class="stat-year-select">
-                  <!-- Dynamically populated 2026-2050 -->
-                </select>
-              </div>
             </div>
             <h1 class="stat-val" id="statTotalFundA" style="color: #10B981;">฿0</h1>
             <span class="stat-subtext" id="statFundASubtext">ยอด ณ ธ.ค. 2050</span>
@@ -234,12 +230,6 @@
           <div class="stat-card glass-panel">
             <div class="stat-card-header">
               <span class="stat-label">เงินสำรอง (B) รวม</span>
-              <div class="stat-year-picker">
-                <span class="stat-picker-label">ณ สิ้นปี:</span>
-                <select id="statReserveBYearSelect" class="stat-year-select">
-                  <!-- Dynamically populated 2026-2050 -->
-                </select>
-              </div>
             </div>
             <h1 class="stat-val" id="statTotalReserveB" style="color: #F97316;">฿0</h1>
             <span class="stat-subtext" id="statReserveBSubtext">ยอด ณ ธ.ค. 2050</span>

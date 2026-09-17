@@ -1117,23 +1117,19 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    // Populate Stat Card Cutoff Year Selectors
-    const statIncSel = document.getElementById('statIncomeYearSelect');
-    const statExpSel = document.getElementById('statExpenseYearSelect');
-    const statFundASel = document.getElementById('statFundAYearSelect');
-    const statReserveBSel = document.getElementById('statReserveBYearSelect');
-    [statIncSel, statExpSel, statFundASel, statReserveBSel].forEach(el => {
-      if (!el) return;
+    // Populate Stat Card Global Cutoff Year Selector
+    const statGlobalSel = document.getElementById('statGlobalYearSelect');
+    if (statGlobalSel) {
       const curYear = financeState.summaryCutoffYear || 2050;
-      el.innerHTML = '';
+      statGlobalSel.innerHTML = '';
       for (let y = 2026; y <= 2050; y++) {
         const opt = document.createElement('option');
         opt.value = y;
-        opt.textContent = (y === 2050) ? `ปี ${y} (สิ้นสุด)` : `ปี ${y}`;
+        opt.textContent = (y === 2050) ? `ปี ${y} (สิ้นสุดโครงการ)` : `ปี ${y}`;
         if (y === curYear) opt.selected = true;
-        el.appendChild(opt);
+        statGlobalSel.appendChild(opt);
       }
-    });
+    }
 
     // Populate Chart Display Start Year & End Year Selectors
     const chartStartSel = document.getElementById('chartStartYearSelect');
@@ -1772,24 +1768,14 @@ document.addEventListener('DOMContentLoaded', () => {
   function setupDashboardEventListeners() {
     setupNavigation();
 
-    // Summary Stat Cards Year Cutoff Listeners
-    const statIncSel = document.getElementById('statIncomeYearSelect');
-    const statExpSel = document.getElementById('statExpenseYearSelect');
-    const statFundASel = document.getElementById('statFundAYearSelect');
-    const statReserveBSel = document.getElementById('statReserveBYearSelect');
-    [statIncSel, statExpSel, statFundASel, statReserveBSel].forEach(sel => {
-      if (sel) {
-        sel.addEventListener('change', (e) => {
-          const val = parseInt(e.target.value);
-          financeState.summaryCutoffYear = val;
-          if (statIncSel) statIncSel.value = val;
-          if (statExpSel) statExpSel.value = val;
-          if (statFundASel) statFundASel.value = val;
-          if (statReserveBSel) statReserveBSel.value = val;
-          updateKPICards();
-        });
-      }
-    });
+    // Summary Stat Cards Global Year Cutoff Listener
+    const statGlobalSel = document.getElementById('statGlobalYearSelect');
+    if (statGlobalSel) {
+      statGlobalSel.addEventListener('change', (e) => {
+        financeState.summaryCutoffYear = parseInt(e.target.value);
+        updateKPICards();
+      });
+    }
 
     // Chart Display Range Listeners (Start Year & End Year)
     const chartStartSel = document.getElementById('chartStartYearSelect');
@@ -2496,14 +2482,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (chartStartSel && financeState.startYear) chartStartSel.value = financeState.startYear;
     if (chartEndSel && financeState.endYear) chartEndSel.value = financeState.endYear;
 
-    const statIncSel = document.getElementById('statIncomeYearSelect');
-    const statExpSel = document.getElementById('statExpenseYearSelect');
-    const statFundASel = document.getElementById('statFundAYearSelect');
-    const statReserveBSel = document.getElementById('statReserveBYearSelect');
-    if (statIncSel && financeState.summaryCutoffYear) statIncSel.value = financeState.summaryCutoffYear;
-    if (statExpSel && financeState.summaryCutoffYear) statExpSel.value = financeState.summaryCutoffYear;
-    if (statFundASel && financeState.summaryCutoffYear) statFundASel.value = financeState.summaryCutoffYear;
-    if (statReserveBSel && financeState.summaryCutoffYear) statReserveBSel.value = financeState.summaryCutoffYear;
+    const statGlobalSel = document.getElementById('statGlobalYearSelect');
+    if (statGlobalSel && financeState.summaryCutoffYear) {
+      statGlobalSel.value = financeState.summaryCutoffYear;
+    }
     
     const titleSpan = document.getElementById('chartRangeTitle');
     if (titleSpan) titleSpan.textContent = `${financeState.startYear} – ${financeState.endYear}`;
