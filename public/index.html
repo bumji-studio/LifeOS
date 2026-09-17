@@ -368,50 +368,58 @@
                 <input type="number" id="paramFundAYield" value="10" step="0.5">
               </div>
 
-              <!-- กองทุน A Dynamic Timeline Blocks -->
-              <div style="display: flex; justify-content: space-between; align-items: center; margin: 12px 0 6px 0;">
-                <div style="font-weight: 700; color: #10B981; font-size: 0.88rem; display: flex; align-items: center; gap: 6px;">
-                  <i class="fa-solid fa-piggy-bank"></i> <span>ช่วงเวลาเพิ่ม/ถอน กองทุน (A)</span>
+              <!-- 3.1 กองทุน A: ช่วงฝากเงินเพิ่ม (Deposit) -->
+              <div style="display: flex; justify-content: space-between; align-items: center; margin: 14px 0 6px 0;">
+                <div style="font-weight: 700; color: #10B981; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
+                  <i class="fa-solid fa-piggy-bank"></i> <span>ช่วงเวลาฝากเงินเพิ่มเข้ากองทุน (A)</span>
                 </div>
-                <div style="display: flex; gap: 6px;">
-                  <button type="button" id="addFundADepositBtn" style="font-size: 0.75rem; padding: 4px 8px; background: rgba(16, 185, 129, 0.15); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 6px; cursor: pointer; font-weight: 600;">
-                    <i class="fa-solid fa-plus"></i> ฝากเพิ่ม
-                  </button>
-                  <button type="button" id="addFundAWithdrawBtn" style="font-size: 0.75rem; padding: 4px 8px; background: rgba(239, 68, 68, 0.15); color: #F87171; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; cursor: pointer; font-weight: 600;">
-                    <i class="fa-solid fa-minus"></i> ถอนออก
-                  </button>
-                </div>
+                <button type="button" id="addFundADepositBtn" style="font-size: 0.75rem; padding: 4px 10px; background: rgba(16, 185, 129, 0.15); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 6px; cursor: pointer; font-weight: 600;">
+                  <i class="fa-solid fa-plus"></i> เพิ่มช่วงฝากเข้า A
+                </button>
               </div>
+              <div id="fundADepositBlocksContainer" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px;"></div>
 
-              <!-- Container for Dynamic Fund A Cards -->
-              <div id="fundABlocksContainer" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px;"></div>
+              <!-- 3.2 กองทุน A: ช่วงถอนเงินออก (Withdraw) -->
+              <div style="display: flex; justify-content: space-between; align-items: center; margin: 10px 0 6px 0;">
+                <div style="font-weight: 700; color: #F87171; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
+                  <i class="fa-solid fa-money-bill-transfer"></i> <span>ช่วงเวลาถอนเงินออกจากกองทุน (A)</span>
+                </div>
+                <button type="button" id="addFundAWithdrawBtn" style="font-size: 0.75rem; padding: 4px 10px; background: rgba(239, 68, 68, 0.15); color: #F87171; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; cursor: pointer; font-weight: 600;">
+                  <i class="fa-solid fa-minus"></i> เพิ่มช่วงถอนออก A
+                </button>
+              </div>
+              <div id="fundAWithdrawBlocksContainer" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px;"></div>
 
-              <hr style="border:0; border-top: 1px dashed var(--border-color); margin: 12px 0;">
+              <hr style="border:0; border-top: 1px dashed var(--border-color); margin: 14px 0;">
 
               <div class="tune-item">
                 <label>เงินสำรอง (B) ตั้งต้น (บาท):</label>
                 <input type="number" id="paramReserveBInit" value="300000" step="50000">
               </div>
 
-              <!-- เงินสำรอง B Dynamic Timeline Blocks -->
-              <div style="display: flex; justify-content: space-between; align-items: center; margin: 12px 0 6px 0;">
-                <div style="font-weight: 700; color: #F97316; font-size: 0.88rem; display: flex; align-items: center; gap: 6px;">
-                  <i class="fa-solid fa-vault"></i> <span>ช่วงเวลาเพิ่ม/ถอน เงินสำรอง (B)</span>
+              <!-- 3.3 เงินสำรอง B: ช่วงฝากเงินเพิ่ม (Deposit) -->
+              <div style="display: flex; justify-content: space-between; align-items: center; margin: 14px 0 6px 0;">
+                <div style="font-weight: 700; color: #F97316; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
+                  <i class="fa-solid fa-vault"></i> <span>ช่วงเวลาฝากเงินเพิ่มเข้าเงินสำรอง (B)</span>
                 </div>
-                <div style="display: flex; gap: 6px;">
-                  <button type="button" id="addReserveBDepositBtn" style="font-size: 0.75rem; padding: 4px 8px; background: rgba(249, 115, 22, 0.15); color: #F97316; border: 1px solid rgba(249, 115, 22, 0.3); border-radius: 6px; cursor: pointer; font-weight: 600;">
-                    <i class="fa-solid fa-plus"></i> ฝากเพิ่ม
-                  </button>
-                  <button type="button" id="addReserveBWithdrawBtn" style="font-size: 0.75rem; padding: 4px 8px; background: rgba(239, 68, 68, 0.15); color: #F87171; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; cursor: pointer; font-weight: 600;">
-                    <i class="fa-solid fa-minus"></i> ถอนออก
-                  </button>
-                </div>
+                <button type="button" id="addReserveBDepositBtn" style="font-size: 0.75rem; padding: 4px 10px; background: rgba(249, 115, 22, 0.15); color: #F97316; border: 1px solid rgba(249, 115, 22, 0.3); border-radius: 6px; cursor: pointer; font-weight: 600;">
+                  <i class="fa-solid fa-plus"></i> เพิ่มช่วงฝากเข้า B
+                </button>
               </div>
+              <div id="reserveBDepositBlocksContainer" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px;"></div>
 
-              <!-- Container for Dynamic Reserve B Cards -->
-              <div id="reserveBBlocksContainer" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px;"></div>
+              <!-- 3.4 เงินสำรอง B: ช่วงถอนเงินออก (Withdraw) -->
+              <div style="display: flex; justify-content: space-between; align-items: center; margin: 10px 0 6px 0;">
+                <div style="font-weight: 700; color: #F87171; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
+                  <i class="fa-solid fa-hand-holding-dollar"></i> <span>ช่วงเวลาถอนเงินออกจากเงินสำรอง (B)</span>
+                </div>
+                <button type="button" id="addReserveBWithdrawBtn" style="font-size: 0.75rem; padding: 4px 10px; background: rgba(239, 68, 68, 0.15); color: #F87171; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; cursor: pointer; font-weight: 600;">
+                  <i class="fa-solid fa-minus"></i> เพิ่มช่วงถอนออก B
+                </button>
+              </div>
+              <div id="reserveBWithdrawBlocksContainer" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px;"></div>
 
-              <hr style="border:0; border-top: 1px dashed var(--border-color); margin: 12px 0;">
+              <hr style="border:0; border-top: 1px dashed var(--border-color); margin: 14px 0;">
 
               <div class="tune-item">
                 <label>ถอนกองทุน (A) เติม (B) อัตโนมัติครั้งละ:</label>

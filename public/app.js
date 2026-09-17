@@ -299,13 +299,15 @@ document.addEventListener('DOMContentLoaded', () => {
       { id: 2, label: 'หลังหมดภาระคอนโด', startMonth: 1, startYear: 2029, endMonth: 12, endYear: 2050, amount: 15000, type: 'fixed', stepAmount: 0 }
     ],
 
-    // Dynamic Fund A Deposit/Withdrawal Stages
-    fundABlocks: [
-      { id: 1, label: 'ฝากเข้ากองทุน A ช่วงแรก', startMonth: 10, startYear: 2026, endMonth: 4, endYear: 2027, amount: 30000, action: 'deposit' }
+    // Dynamic Fund A Deposit & Withdrawal Stages (Separated)
+    fundADepositBlocks: [
+      { id: 1, label: 'ฝากเข้าช่วงแรก', startMonth: 10, startYear: 2026, endMonth: 4, endYear: 2027, amount: 30000 }
     ],
+    fundAWithdrawBlocks: [],
 
-    // Dynamic Reserve B Deposit/Withdrawal Stages
-    reserveBBlocks: [],
+    // Dynamic Reserve B Deposit & Withdrawal Stages (Separated)
+    reserveBDepositBlocks: [],
+    reserveBWithdrawBlocks: [],
 
     condoGross: 5500000, // gross sale price
     condoDebt: 2000000, // bank mortgage debt
@@ -538,41 +540,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const currentKey = y * 12 + m;
 
-        // Dynamic Fund A Deposit & Withdrawal calculation for this month
+        // 1. Dynamic Fund A Deposits
         let monthFundADeposit = 0;
-        let monthFundAWithdraw = 0;
-        if (params.fundABlocks && params.fundABlocks.length > 0) {
-          params.fundABlocks.forEach(b => {
-            const bStart = (b.startYear || 2026) * 12 + (b.startMonth || 1);
-            const bEnd = (b.endYear || 2050) * 12 + (b.endMonth || 12);
-            if (currentKey >= bStart && currentKey <= bEnd) {
-              const amt = parseFloat(b.amount) || 0;
-              if (b.action === 'withdraw') {
-                monthFundAWithdraw += amt;
-              } else {
-                monthFundADeposit += amt;
-              }
-            }
-          });
-        }
+        (params.fundADepositBlocks || []).forEach(b => {
+          const bStart = (b.startYear || 2026) * 12 + (b.startMonth || 1);
+          const bEnd = (b.endYear || 2050) * 12 + (b.endMonth || 12);
+          if (currentKey >= bStart && currentKey <= bEnd) {
+            monthFundADeposit += parseFloat(b.amount) || 0;
+          }
+        });
 
-        // Dynamic Reserve B Deposit & Withdrawal calculation for this month
+        // 2. Dynamic Fund A Withdrawals
+        let monthFundAWithdraw = 0;
+        (params.fundAWithdrawBlocks || []).forEach(b => {
+          const bStart = (b.startYear || 2026) * 12 + (b.startMonth || 1);
+          const bEnd = (b.endYear || 2050) * 12 + (b.endMonth || 12);
+          if (currentKey >= bStart && currentKey <= bEnd) {
+            monthFundAWithdraw += parseFloat(b.amount) || 0;
+          }
+        });
+
+        // 3. Dynamic Reserve B Deposits
         let monthReserveBDeposit = 0;
+        (params.reserveBDepositBlocks || []).forEach(b => {
+          const bStart = (b.startYear || 2026) * 12 + (b.startMonth || 1);
+          const bEnd = (b.endYear || 2050) * 12 + (b.endMonth || 12);
+          if (currentKey >= bStart && currentKey <= bEnd) {
+            monthReserveBDeposit += parseFloat(b.amount) || 0;
+          }
+        });
+
+        // 4. Dynamic Reserve B Withdrawals
         let monthReserveBWithdraw = 0;
-        if (params.reserveBBlocks && params.reserveBBlocks.length > 0) {
-          params.reserveBBlocks.forEach(b => {
-            const bStart = (b.startYear || 2026) * 12 + (b.startMonth || 1);
-            const bEnd = (b.endYear || 2050) * 12 + (b.endMonth || 12);
-            if (currentKey >= bStart && currentKey <= bEnd) {
-              const amt = parseFloat(b.amount) || 0;
-              if (b.action === 'withdraw') {
-                monthReserveBWithdraw += amt;
-              } else {
-                monthReserveBDeposit += amt;
-              }
-            }
-          });
-        }
+        (params.reserveBWithdrawBlocks || []).forEach(b => {
+          const bStart = (b.startYear || 2026) * 12 + (b.startMonth || 1);
+          const bEnd = (b.endYear || 2050) * 12 + (b.endMonth || 12);
+          if (currentKey >= bStart && currentKey <= bEnd) {
+            monthReserveBWithdraw += parseFloat(b.amount) || 0;
+          }
+        });
 
         // Check Income from Dynamic Timeline Blocks
         if (params.yearlyOverrides[y] && params.yearlyOverrides[y].income !== undefined) {
@@ -1139,8 +1145,10 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderDynamicTimelineBlocks() {
     const incomeContainer = document.getElementById('incomeBlocksContainer');
     const expContainer = document.getElementById('expBlocksContainer');
-    const fundAContainer = document.getElementById('fundABlocksContainer');
-    const reserveBContainer = document.getElementById('reserveBBlocksContainer');
+    const fundADepositContainer = document.getElementById('fundADepositBlocksContainer');
+    const fundAWithdrawContainer = document.getElementById('fundAWithdrawBlocksContainer');
+    const reserveBDepositContainer = document.getElementById('reserveBDepositBlocksContainer');
+    const reserveBWithdrawContainer = document.getElementById('reserveBWithdrawBlocksContainer');
 
     const thaiMonthsNames = [
       'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.',
@@ -1302,12 +1310,13 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    if (fundAContainer) {
-      fundAContainer.innerHTML = '';
-      (params.fundABlocks || []).forEach((block, index) => {
+    // 1. Fund A Deposit Cards
+    if (fundADepositContainer) {
+      fundADepositContainer.innerHTML = '';
+      (params.fundADepositBlocks || []).forEach((block, index) => {
         const card = document.createElement('div');
         card.className = 'timeline-block-card';
-        card.style.cssText = 'background: rgba(15, 23, 42, 0.6); padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border-color); font-size: 0.82rem;';
+        card.style.cssText = 'background: rgba(16, 185, 129, 0.08); padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.82rem;';
 
         let yearOptionsStart = '';
         let yearOptionsEnd = '';
@@ -1326,19 +1335,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         card.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <span style="font-weight: 700; color: #10B981;">ช่วงกองทุน A ที่ ${index + 1}</span>
-            <button type="button" class="btn-del-fund-a-block" data-index="${index}" style="background:none; border:none; color:#F87171; cursor:pointer; font-size:0.78rem; font-weight:600;">
+            <span style="font-weight: 700; color: #10B981;"><i class="fa-solid fa-circle-plus"></i> ฝากเข้า กองทุน A (ช่วงที่ ${index + 1})</span>
+            <button type="button" class="btn-del-fund-a-dep" data-index="${index}" style="background:none; border:none; color:#F87171; cursor:pointer; font-size:0.78rem; font-weight:600;">
               <i class="fa-solid fa-trash-can"></i> ลบช่วงนี้
             </button>
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
             <div>
-              <label style="color:var(--text-muted); display:block; font-size:0.75rem; margin-bottom:3px;">เริ่มต้น:</label>
+              <label style="color:var(--text-muted); display:block; font-size:0.75rem; margin-bottom:3px;">เริ่มต้นฝาก:</label>
               <div style="display:flex; gap:4px;">
-                <select class="fund-a-block-input" data-index="${index}" data-field="startMonth" style="flex:1; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 4px; border-radius:6px; border:1px solid var(--border-color); font-size:0.75rem;">
+                <select class="fund-a-dep-input" data-index="${index}" data-field="startMonth" style="flex:1; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 4px; border-radius:6px; border:1px solid var(--border-color); font-size:0.75rem;">
                   ${monthOptionsStart}
                 </select>
-                <select class="fund-a-block-input" data-index="${index}" data-field="startYear" style="flex:1; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 4px; border-radius:6px; border:1px solid var(--border-color); font-size:0.75rem;">
+                <select class="fund-a-dep-input" data-index="${index}" data-field="startYear" style="flex:1; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 4px; border-radius:6px; border:1px solid var(--border-color); font-size:0.75rem;">
                   ${yearOptionsStart}
                 </select>
               </div>
@@ -1346,39 +1355,31 @@ document.addEventListener('DOMContentLoaded', () => {
             <div>
               <label style="color:var(--text-muted); display:block; font-size:0.75rem; margin-bottom:3px;">สิ้นสุดถึง:</label>
               <div style="display:flex; gap:4px;">
-                <select class="fund-a-block-input" data-index="${index}" data-field="endMonth" style="flex:1; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 4px; border-radius:6px; border:1px solid var(--border-color); font-size:0.75rem;">
+                <select class="fund-a-dep-input" data-index="${index}" data-field="endMonth" style="flex:1; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 4px; border-radius:6px; border:1px solid var(--border-color); font-size:0.75rem;">
                   ${monthOptionsEnd}
                 </select>
-                <select class="fund-a-block-input" data-index="${index}" data-field="endYear" style="flex:1; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 4px; border-radius:6px; border:1px solid var(--border-color); font-size:0.75rem;">
+                <select class="fund-a-dep-input" data-index="${index}" data-field="endYear" style="flex:1; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 4px; border-radius:6px; border:1px solid var(--border-color); font-size:0.75rem;">
                   ${yearOptionsEnd}
                 </select>
               </div>
             </div>
           </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-            <div>
-              <label style="color:var(--text-muted); display:block; font-size:0.75rem; margin-bottom:3px;">การกระทำ:</label>
-              <select class="fund-a-block-input" data-index="${index}" data-field="action" style="width:100%; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 6px; border-radius:6px; border:1px solid var(--border-color);">
-                <option value="deposit" ${(block.action || 'deposit') === 'deposit' ? 'selected' : ''}>ฝากเข้า (+)</option>
-                <option value="withdraw" ${block.action === 'withdraw' ? 'selected' : ''}>ถอนออก (-)</option>
-              </select>
-            </div>
-            <div>
-              <label style="color:var(--text-muted); display:block; font-size:0.75rem; margin-bottom:3px;">จำนวน (บาท/เดือน):</label>
-              <input type="number" class="fund-a-block-input" data-index="${index}" data-field="amount" value="${block.amount || 0}" step="1000" style="width:100%; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 6px; border-radius:6px; border:1px solid var(--border-color);">
-            </div>
+          <div>
+            <label style="color:var(--text-muted); display:block; font-size:0.75rem; margin-bottom:3px;">จำนวนเงินฝากเข้า (บาท/เดือน):</label>
+            <input type="number" class="fund-a-dep-input" data-index="${index}" data-field="amount" value="${block.amount || 0}" step="1000" style="width:100%; background:rgba(30,41,59,0.8); color:#10B981; font-weight:700; padding:4px 8px; border-radius:6px; border:1px solid rgba(16, 185, 129, 0.4);">
           </div>
         `;
-        fundAContainer.appendChild(card);
+        fundADepositContainer.appendChild(card);
       });
     }
 
-    if (reserveBContainer) {
-      reserveBContainer.innerHTML = '';
-      (params.reserveBBlocks || []).forEach((block, index) => {
+    // 2. Fund A Withdraw Cards
+    if (fundAWithdrawContainer) {
+      fundAWithdrawContainer.innerHTML = '';
+      (params.fundAWithdrawBlocks || []).forEach((block, index) => {
         const card = document.createElement('div');
         card.className = 'timeline-block-card';
-        card.style.cssText = 'background: rgba(15, 23, 42, 0.6); padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border-color); font-size: 0.82rem;';
+        card.style.cssText = 'background: rgba(239, 68, 68, 0.08); padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(239, 68, 68, 0.3); font-size: 0.82rem;';
 
         let yearOptionsStart = '';
         let yearOptionsEnd = '';
@@ -1397,19 +1398,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         card.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <span style="font-weight: 700; color: #F97316;">ช่วงเงินสำรอง B ที่ ${index + 1}</span>
-            <button type="button" class="btn-del-reserve-b-block" data-index="${index}" style="background:none; border:none; color:#F87171; cursor:pointer; font-size:0.78rem; font-weight:600;">
+            <span style="font-weight: 700; color: #F87171;"><i class="fa-solid fa-circle-minus"></i> ถอนออก กองทุน A (ช่วงที่ ${index + 1})</span>
+            <button type="button" class="btn-del-fund-a-wd" data-index="${index}" style="background:none; border:none; color:#F87171; cursor:pointer; font-size:0.78rem; font-weight:600;">
               <i class="fa-solid fa-trash-can"></i> ลบช่วงนี้
             </button>
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
             <div>
-              <label style="color:var(--text-muted); display:block; font-size:0.75rem; margin-bottom:3px;">เริ่มต้น:</label>
+              <label style="color:var(--text-muted); display:block; font-size:0.75rem; margin-bottom:3px;">เริ่มต้นถอน:</label>
               <div style="display:flex; gap:4px;">
-                <select class="reserve-b-block-input" data-index="${index}" data-field="startMonth" style="flex:1; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 4px; border-radius:6px; border:1px solid var(--border-color); font-size:0.75rem;">
+                <select class="fund-a-wd-input" data-index="${index}" data-field="startMonth" style="flex:1; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 4px; border-radius:6px; border:1px solid var(--border-color); font-size:0.75rem;">
                   ${monthOptionsStart}
                 </select>
-                <select class="reserve-b-block-input" data-index="${index}" data-field="startYear" style="flex:1; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 4px; border-radius:6px; border:1px solid var(--border-color); font-size:0.75rem;">
+                <select class="fund-a-wd-input" data-index="${index}" data-field="startYear" style="flex:1; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 4px; border-radius:6px; border:1px solid var(--border-color); font-size:0.75rem;">
                   ${yearOptionsStart}
                 </select>
               </div>
@@ -1417,30 +1418,147 @@ document.addEventListener('DOMContentLoaded', () => {
             <div>
               <label style="color:var(--text-muted); display:block; font-size:0.75rem; margin-bottom:3px;">สิ้นสุดถึง:</label>
               <div style="display:flex; gap:4px;">
-                <select class="reserve-b-block-input" data-index="${index}" data-field="endMonth" style="flex:1; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 4px; border-radius:6px; border:1px solid var(--border-color); font-size:0.75rem;">
+                <select class="fund-a-wd-input" data-index="${index}" data-field="endMonth" style="flex:1; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 4px; border-radius:6px; border:1px solid var(--border-color); font-size:0.75rem;">
                   ${monthOptionsEnd}
                 </select>
-                <select class="reserve-b-block-input" data-index="${index}" data-field="endYear" style="flex:1; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 4px; border-radius:6px; border:1px solid var(--border-color); font-size:0.75rem;">
+                <select class="fund-a-wd-input" data-index="${index}" data-field="endYear" style="flex:1; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 4px; border-radius:6px; border:1px solid var(--border-color); font-size:0.75rem;">
                   ${yearOptionsEnd}
                 </select>
               </div>
             </div>
           </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-            <div>
-              <label style="color:var(--text-muted); display:block; font-size:0.75rem; margin-bottom:3px;">การกระทำ:</label>
-              <select class="reserve-b-block-input" data-index="${index}" data-field="action" style="width:100%; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 6px; border-radius:6px; border:1px solid var(--border-color);">
-                <option value="deposit" ${(block.action || 'deposit') === 'deposit' ? 'selected' : ''}>ฝากเข้า (+)</option>
-                <option value="withdraw" ${block.action === 'withdraw' ? 'selected' : ''}>ถอนออก (-)</option>
-              </select>
-            </div>
-            <div>
-              <label style="color:var(--text-muted); display:block; font-size:0.75rem; margin-bottom:3px;">จำนวน (บาท/เดือน):</label>
-              <input type="number" class="reserve-b-block-input" data-index="${index}" data-field="amount" value="${block.amount || 0}" step="1000" style="width:100%; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 6px; border-radius:6px; border:1px solid var(--border-color);">
-            </div>
+          <div>
+            <label style="color:var(--text-muted); display:block; font-size:0.75rem; margin-bottom:3px;">จำนวนเงินถอนออก (บาท/เดือน):</label>
+            <input type="number" class="fund-a-wd-input" data-index="${index}" data-field="amount" value="${block.amount || 0}" step="1000" style="width:100%; background:rgba(30,41,59,0.8); color:#F87171; font-weight:700; padding:4px 8px; border-radius:6px; border:1px solid rgba(239, 68, 68, 0.4);">
           </div>
         `;
-        reserveBContainer.appendChild(card);
+        fundAWithdrawContainer.appendChild(card);
+      });
+    }
+
+    // 3. Reserve B Deposit Cards
+    if (reserveBDepositContainer) {
+      reserveBDepositContainer.innerHTML = '';
+      (params.reserveBDepositBlocks || []).forEach((block, index) => {
+        const card = document.createElement('div');
+        card.className = 'timeline-block-card';
+        card.style.cssText = 'background: rgba(249, 115, 22, 0.08); padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(249, 115, 22, 0.3); font-size: 0.82rem;';
+
+        let yearOptionsStart = '';
+        let yearOptionsEnd = '';
+        for (let y = 2026; y <= 2050; y++) {
+          yearOptionsStart += `<option value="${y}" ${block.startYear == y ? 'selected' : ''}>ปี ${y}</option>`;
+          yearOptionsEnd += `<option value="${y}" ${block.endYear == y ? 'selected' : ''}>ปี ${y}</option>`;
+        }
+
+        let monthOptionsStart = '';
+        let monthOptionsEnd = '';
+        thaiMonthsNames.forEach((mName, mIdx) => {
+          const mVal = mIdx + 1;
+          monthOptionsStart += `<option value="${mVal}" ${(block.startMonth || 1) == mVal ? 'selected' : ''}>${mName}</option>`;
+          monthOptionsEnd += `<option value="${mVal}" ${(block.endMonth || 12) == mVal ? 'selected' : ''}>${mName}</option>`;
+        });
+
+        card.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-weight: 700; color: #F97316;"><i class="fa-solid fa-circle-plus"></i> ฝากเข้า เงินสำรอง B (ช่วงที่ ${index + 1})</span>
+            <button type="button" class="btn-del-res-b-dep" data-index="${index}" style="background:none; border:none; color:#F87171; cursor:pointer; font-size:0.78rem; font-weight:600;">
+              <i class="fa-solid fa-trash-can"></i> ลบช่วงนี้
+            </button>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+            <div>
+              <label style="color:var(--text-muted); display:block; font-size:0.75rem; margin-bottom:3px;">เริ่มต้นฝาก:</label>
+              <div style="display:flex; gap:4px;">
+                <select class="res-b-dep-input" data-index="${index}" data-field="startMonth" style="flex:1; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 4px; border-radius:6px; border:1px solid var(--border-color); font-size:0.75rem;">
+                  ${monthOptionsStart}
+                </select>
+                <select class="res-b-dep-input" data-index="${index}" data-field="startYear" style="flex:1; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 4px; border-radius:6px; border:1px solid var(--border-color); font-size:0.75rem;">
+                  ${yearOptionsStart}
+                </select>
+              </div>
+            </div>
+            <div>
+              <label style="color:var(--text-muted); display:block; font-size:0.75rem; margin-bottom:3px;">สิ้นสุดถึง:</label>
+              <div style="display:flex; gap:4px;">
+                <select class="res-b-dep-input" data-index="${index}" data-field="endMonth" style="flex:1; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 4px; border-radius:6px; border:1px solid var(--border-color); font-size:0.75rem;">
+                  ${monthOptionsEnd}
+                </select>
+                <select class="res-b-dep-input" data-index="${index}" data-field="endYear" style="flex:1; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 4px; border-radius:6px; border:1px solid var(--border-color); font-size:0.75rem;">
+                  ${yearOptionsEnd}
+                </select>
+              </div>
+            </div>
+          </div>
+          <div>
+            <label style="color:var(--text-muted); display:block; font-size:0.75rem; margin-bottom:3px;">จำนวนเงินฝากเข้า (บาท/เดือน):</label>
+            <input type="number" class="res-b-dep-input" data-index="${index}" data-field="amount" value="${block.amount || 0}" step="1000" style="width:100%; background:rgba(30,41,59,0.8); color:#F97316; font-weight:700; padding:4px 8px; border-radius:6px; border:1px solid rgba(249, 115, 22, 0.4);">
+          </div>
+        `;
+        reserveBDepositContainer.appendChild(card);
+      });
+    }
+
+    // 4. Reserve B Withdraw Cards
+    if (reserveBWithdrawContainer) {
+      reserveBWithdrawContainer.innerHTML = '';
+      (params.reserveBWithdrawBlocks || []).forEach((block, index) => {
+        const card = document.createElement('div');
+        card.className = 'timeline-block-card';
+        card.style.cssText = 'background: rgba(239, 68, 68, 0.08); padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(239, 68, 68, 0.3); font-size: 0.82rem;';
+
+        let yearOptionsStart = '';
+        let yearOptionsEnd = '';
+        for (let y = 2026; y <= 2050; y++) {
+          yearOptionsStart += `<option value="${y}" ${block.startYear == y ? 'selected' : ''}>ปี ${y}</option>`;
+          yearOptionsEnd += `<option value="${y}" ${block.endYear == y ? 'selected' : ''}>ปี ${y}</option>`;
+        }
+
+        let monthOptionsStart = '';
+        let monthOptionsEnd = '';
+        thaiMonthsNames.forEach((mName, mIdx) => {
+          const mVal = mIdx + 1;
+          monthOptionsStart += `<option value="${mVal}" ${(block.startMonth || 1) == mVal ? 'selected' : ''}>${mName}</option>`;
+          monthOptionsEnd += `<option value="${mVal}" ${(block.endMonth || 12) == mVal ? 'selected' : ''}>${mName}</option>`;
+        });
+
+        card.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-weight: 700; color: #F87171;"><i class="fa-solid fa-circle-minus"></i> ถอนออก เงินสำรอง B (ช่วงที่ ${index + 1})</span>
+            <button type="button" class="btn-del-res-b-wd" data-index="${index}" style="background:none; border:none; color:#F87171; cursor:pointer; font-size:0.78rem; font-weight:600;">
+              <i class="fa-solid fa-trash-can"></i> ลบช่วงนี้
+            </button>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+            <div>
+              <label style="color:var(--text-muted); display:block; font-size:0.75rem; margin-bottom:3px;">เริ่มต้นถอน:</label>
+              <div style="display:flex; gap:4px;">
+                <select class="res-b-wd-input" data-index="${index}" data-field="startMonth" style="flex:1; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 4px; border-radius:6px; border:1px solid var(--border-color); font-size:0.75rem;">
+                  ${monthOptionsStart}
+                </select>
+                <select class="res-b-wd-input" data-index="${index}" data-field="startYear" style="flex:1; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 4px; border-radius:6px; border:1px solid var(--border-color); font-size:0.75rem;">
+                  ${yearOptionsStart}
+                </select>
+              </div>
+            </div>
+            <div>
+              <label style="color:var(--text-muted); display:block; font-size:0.75rem; margin-bottom:3px;">สิ้นสุดถึง:</label>
+              <div style="display:flex; gap:4px;">
+                <select class="res-b-wd-input" data-index="${index}" data-field="endMonth" style="flex:1; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 4px; border-radius:6px; border:1px solid var(--border-color); font-size:0.75rem;">
+                  ${monthOptionsEnd}
+                </select>
+                <select class="res-b-wd-input" data-index="${index}" data-field="endYear" style="flex:1; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 4px; border-radius:6px; border:1px solid var(--border-color); font-size:0.75rem;">
+                  ${yearOptionsEnd}
+                </select>
+              </div>
+            </div>
+          </div>
+          <div>
+            <label style="color:var(--text-muted); display:block; font-size:0.75rem; margin-bottom:3px;">จำนวนเงินถอนออก (บาท/เดือน):</label>
+            <input type="number" class="res-b-wd-input" data-index="${index}" data-field="amount" value="${block.amount || 0}" step="1000" style="width:100%; background:rgba(30,41,59,0.8); color:#F87171; font-weight:700; padding:4px 8px; border-radius:6px; border:1px solid rgba(239, 68, 68, 0.4);">
+          </div>
+        `;
+        reserveBWithdrawContainer.appendChild(card);
       });
     }
 
@@ -1507,58 +1625,120 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
-    document.querySelectorAll('.fund-a-block-input').forEach(input => {
+    // 1. Fund A Deposit Block Input Listeners
+    document.querySelectorAll('.fund-a-dep-input').forEach(input => {
       input.addEventListener('change', (e) => {
         const idx = parseInt(e.target.getAttribute('data-index'));
         const field = e.target.getAttribute('data-field');
-        if (params.fundABlocks && params.fundABlocks[idx]) {
+        if (params.fundADepositBlocks && params.fundADepositBlocks[idx]) {
           let val = e.target.value;
           if (field === 'startYear' || field === 'endYear' || field === 'startMonth' || field === 'endMonth') {
             val = parseInt(val);
           } else if (field === 'amount') {
             val = parseFloat(val) || 0;
           }
-          params.fundABlocks[idx][field] = val;
+          params.fundADepositBlocks[idx][field] = val;
           renderDynamicTimelineBlocks();
           runSimulationAndRender();
         }
       });
     });
 
-    document.querySelectorAll('.btn-del-fund-a-block').forEach(btn => {
+    document.querySelectorAll('.btn-del-fund-a-dep').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const idx = parseInt(e.currentTarget.getAttribute('data-index'));
-        if (params.fundABlocks) {
-          params.fundABlocks.splice(idx, 1);
+        if (params.fundADepositBlocks) {
+          params.fundADepositBlocks.splice(idx, 1);
           renderDynamicTimelineBlocks();
           runSimulationAndRender();
         }
       });
     });
 
-    document.querySelectorAll('.reserve-b-block-input').forEach(input => {
+    // 2. Fund A Withdraw Block Input Listeners
+    document.querySelectorAll('.fund-a-wd-input').forEach(input => {
       input.addEventListener('change', (e) => {
         const idx = parseInt(e.target.getAttribute('data-index'));
         const field = e.target.getAttribute('data-field');
-        if (params.reserveBBlocks && params.reserveBBlocks[idx]) {
+        if (params.fundAWithdrawBlocks && params.fundAWithdrawBlocks[idx]) {
           let val = e.target.value;
           if (field === 'startYear' || field === 'endYear' || field === 'startMonth' || field === 'endMonth') {
             val = parseInt(val);
           } else if (field === 'amount') {
             val = parseFloat(val) || 0;
           }
-          params.reserveBBlocks[idx][field] = val;
+          params.fundAWithdrawBlocks[idx][field] = val;
           renderDynamicTimelineBlocks();
           runSimulationAndRender();
         }
       });
     });
 
-    document.querySelectorAll('.btn-del-reserve-b-block').forEach(btn => {
+    document.querySelectorAll('.btn-del-fund-a-wd').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const idx = parseInt(e.currentTarget.getAttribute('data-index'));
-        if (params.reserveBBlocks) {
-          params.reserveBBlocks.splice(idx, 1);
+        if (params.fundAWithdrawBlocks) {
+          params.fundAWithdrawBlocks.splice(idx, 1);
+          renderDynamicTimelineBlocks();
+          runSimulationAndRender();
+        }
+      });
+    });
+
+    // 3. Reserve B Deposit Block Input Listeners
+    document.querySelectorAll('.res-b-dep-input').forEach(input => {
+      input.addEventListener('change', (e) => {
+        const idx = parseInt(e.target.getAttribute('data-index'));
+        const field = e.target.getAttribute('data-field');
+        if (params.reserveBDepositBlocks && params.reserveBDepositBlocks[idx]) {
+          let val = e.target.value;
+          if (field === 'startYear' || field === 'endYear' || field === 'startMonth' || field === 'endMonth') {
+            val = parseInt(val);
+          } else if (field === 'amount') {
+            val = parseFloat(val) || 0;
+          }
+          params.reserveBDepositBlocks[idx][field] = val;
+          renderDynamicTimelineBlocks();
+          runSimulationAndRender();
+        }
+      });
+    });
+
+    document.querySelectorAll('.btn-del-res-b-dep').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = parseInt(e.currentTarget.getAttribute('data-index'));
+        if (params.reserveBDepositBlocks) {
+          params.reserveBDepositBlocks.splice(idx, 1);
+          renderDynamicTimelineBlocks();
+          runSimulationAndRender();
+        }
+      });
+    });
+
+    // 4. Reserve B Withdraw Block Input Listeners
+    document.querySelectorAll('.res-b-wd-input').forEach(input => {
+      input.addEventListener('change', (e) => {
+        const idx = parseInt(e.target.getAttribute('data-index'));
+        const field = e.target.getAttribute('data-field');
+        if (params.reserveBWithdrawBlocks && params.reserveBWithdrawBlocks[idx]) {
+          let val = e.target.value;
+          if (field === 'startYear' || field === 'endYear' || field === 'startMonth' || field === 'endMonth') {
+            val = parseInt(val);
+          } else if (field === 'amount') {
+            val = parseFloat(val) || 0;
+          }
+          params.reserveBWithdrawBlocks[idx][field] = val;
+          renderDynamicTimelineBlocks();
+          runSimulationAndRender();
+        }
+      });
+    });
+
+    document.querySelectorAll('.btn-del-res-b-wd').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = parseInt(e.currentTarget.getAttribute('data-index'));
+        if (params.reserveBWithdrawBlocks) {
+          params.reserveBWithdrawBlocks.splice(idx, 1);
           renderDynamicTimelineBlocks();
           runSimulationAndRender();
         }
@@ -1671,17 +1851,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const addFundADepositBtn = document.getElementById('addFundADepositBtn');
     if (addFundADepositBtn) {
       addFundADepositBtn.addEventListener('click', () => {
-        if (!params.fundABlocks) params.fundABlocks = [];
-        const lastBlock = params.fundABlocks[params.fundABlocks.length - 1];
+        if (!params.fundADepositBlocks) params.fundADepositBlocks = [];
+        const lastBlock = params.fundADepositBlocks[params.fundADepositBlocks.length - 1];
         const nextStart = lastBlock ? Math.min(2050, lastBlock.endYear + 1) : 2026;
-        params.fundABlocks.push({
+        params.fundADepositBlocks.push({
           id: Date.now(),
-          label: `ช่วงฝากเพิ่มกองทุน A`,
+          label: `ช่วงฝากเงินเพิ่ม A`,
           startMonth: 1,
           startYear: nextStart,
           endMonth: 12,
           endYear: 2050,
-          action: 'deposit',
           amount: 10000
         });
         renderDynamicTimelineBlocks();
@@ -1692,17 +1871,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const addFundAWithdrawBtn = document.getElementById('addFundAWithdrawBtn');
     if (addFundAWithdrawBtn) {
       addFundAWithdrawBtn.addEventListener('click', () => {
-        if (!params.fundABlocks) params.fundABlocks = [];
-        const lastBlock = params.fundABlocks[params.fundABlocks.length - 1];
+        if (!params.fundAWithdrawBlocks) params.fundAWithdrawBlocks = [];
+        const lastBlock = params.fundAWithdrawBlocks[params.fundAWithdrawBlocks.length - 1];
         const nextStart = lastBlock ? Math.min(2050, lastBlock.endYear + 1) : 2026;
-        params.fundABlocks.push({
+        params.fundAWithdrawBlocks.push({
           id: Date.now(),
-          label: `ช่วงถอนออกกองทุน A`,
+          label: `ช่วงถอนเงินออก A`,
           startMonth: 1,
           startYear: nextStart,
           endMonth: 12,
           endYear: 2050,
-          action: 'withdraw',
           amount: 10000
         });
         renderDynamicTimelineBlocks();
@@ -1714,17 +1892,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const addReserveBDepositBtn = document.getElementById('addReserveBDepositBtn');
     if (addReserveBDepositBtn) {
       addReserveBDepositBtn.addEventListener('click', () => {
-        if (!params.reserveBBlocks) params.reserveBBlocks = [];
-        const lastBlock = params.reserveBBlocks[params.reserveBBlocks.length - 1];
+        if (!params.reserveBDepositBlocks) params.reserveBDepositBlocks = [];
+        const lastBlock = params.reserveBDepositBlocks[params.reserveBDepositBlocks.length - 1];
         const nextStart = lastBlock ? Math.min(2050, lastBlock.endYear + 1) : 2026;
-        params.reserveBBlocks.push({
+        params.reserveBDepositBlocks.push({
           id: Date.now(),
-          label: `ช่วงฝากเพิ่มเงินสำรอง B`,
+          label: `ช่วงฝากเงินเพิ่ม B`,
           startMonth: 1,
           startYear: nextStart,
           endMonth: 12,
           endYear: 2050,
-          action: 'deposit',
           amount: 5000
         });
         renderDynamicTimelineBlocks();
@@ -1735,17 +1912,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const addReserveBWithdrawBtn = document.getElementById('addReserveBWithdrawBtn');
     if (addReserveBWithdrawBtn) {
       addReserveBWithdrawBtn.addEventListener('click', () => {
-        if (!params.reserveBBlocks) params.reserveBBlocks = [];
-        const lastBlock = params.reserveBBlocks[params.reserveBBlocks.length - 1];
+        if (!params.reserveBWithdrawBlocks) params.reserveBWithdrawBlocks = [];
+        const lastBlock = params.reserveBWithdrawBlocks[params.reserveBWithdrawBlocks.length - 1];
         const nextStart = lastBlock ? Math.min(2050, lastBlock.endYear + 1) : 2026;
-        params.reserveBBlocks.push({
+        params.reserveBWithdrawBlocks.push({
           id: Date.now(),
-          label: `ช่วงถอนออกเงินสำรอง B`,
+          label: `ช่วงถอนเงินออก B`,
           startMonth: 1,
           startYear: nextStart,
           endMonth: 12,
           endYear: 2050,
-          action: 'withdraw',
           amount: 5000
         });
         renderDynamicTimelineBlocks();
@@ -2199,6 +2375,34 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         const parsed = JSON.parse(saved);
         Object.assign(params, parsed);
+
+        // Migration for legacy fundABlocks
+        if (parsed.fundABlocks && parsed.fundABlocks.length > 0) {
+          if (!params.fundADepositBlocks) params.fundADepositBlocks = [];
+          if (!params.fundAWithdrawBlocks) params.fundAWithdrawBlocks = [];
+          parsed.fundABlocks.forEach(b => {
+            if (b.action === 'withdraw') {
+              params.fundAWithdrawBlocks.push(b);
+            } else {
+              params.fundADepositBlocks.push(b);
+            }
+          });
+          delete params.fundABlocks;
+        }
+
+        // Migration for legacy reserveBBlocks
+        if (parsed.reserveBBlocks && parsed.reserveBBlocks.length > 0) {
+          if (!params.reserveBDepositBlocks) params.reserveBDepositBlocks = [];
+          if (!params.reserveBWithdrawBlocks) params.reserveBWithdrawBlocks = [];
+          parsed.reserveBBlocks.forEach(b => {
+            if (b.action === 'withdraw') {
+              params.reserveBWithdrawBlocks.push(b);
+            } else {
+              params.reserveBDepositBlocks.push(b);
+            }
+          });
+          delete params.reserveBBlocks;
+        }
       } catch (e) {
         console.error('Error parsing saved params', e);
       }
