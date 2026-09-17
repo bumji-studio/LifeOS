@@ -1667,15 +1667,16 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    const addFundABlockBtn = document.getElementById('addFundABlockBtn');
-    if (addFundABlockBtn) {
-      addFundABlockBtn.addEventListener('click', () => {
+    // Fund A Deposit / Withdraw Buttons
+    const addFundADepositBtn = document.getElementById('addFundADepositBtn');
+    if (addFundADepositBtn) {
+      addFundADepositBtn.addEventListener('click', () => {
         if (!params.fundABlocks) params.fundABlocks = [];
         const lastBlock = params.fundABlocks[params.fundABlocks.length - 1];
         const nextStart = lastBlock ? Math.min(2050, lastBlock.endYear + 1) : 2026;
         params.fundABlocks.push({
           id: Date.now(),
-          label: `ช่วงกองทุน A ใหม่`,
+          label: `ช่วงฝากเพิ่มกองทุน A`,
           startMonth: 1,
           startYear: nextStart,
           endMonth: 12,
@@ -1688,20 +1689,63 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    const addReserveBBlockBtn = document.getElementById('addReserveBBlockBtn');
-    if (addReserveBBlockBtn) {
-      addReserveBBlockBtn.addEventListener('click', () => {
+    const addFundAWithdrawBtn = document.getElementById('addFundAWithdrawBtn');
+    if (addFundAWithdrawBtn) {
+      addFundAWithdrawBtn.addEventListener('click', () => {
+        if (!params.fundABlocks) params.fundABlocks = [];
+        const lastBlock = params.fundABlocks[params.fundABlocks.length - 1];
+        const nextStart = lastBlock ? Math.min(2050, lastBlock.endYear + 1) : 2026;
+        params.fundABlocks.push({
+          id: Date.now(),
+          label: `ช่วงถอนออกกองทุน A`,
+          startMonth: 1,
+          startYear: nextStart,
+          endMonth: 12,
+          endYear: 2050,
+          action: 'withdraw',
+          amount: 10000
+        });
+        renderDynamicTimelineBlocks();
+        runSimulationAndRender();
+      });
+    }
+
+    // Reserve B Deposit / Withdraw Buttons
+    const addReserveBDepositBtn = document.getElementById('addReserveBDepositBtn');
+    if (addReserveBDepositBtn) {
+      addReserveBDepositBtn.addEventListener('click', () => {
         if (!params.reserveBBlocks) params.reserveBBlocks = [];
         const lastBlock = params.reserveBBlocks[params.reserveBBlocks.length - 1];
         const nextStart = lastBlock ? Math.min(2050, lastBlock.endYear + 1) : 2026;
         params.reserveBBlocks.push({
           id: Date.now(),
-          label: `ช่วงเงินสำรอง B ใหม่`,
+          label: `ช่วงฝากเพิ่มเงินสำรอง B`,
           startMonth: 1,
           startYear: nextStart,
           endMonth: 12,
           endYear: 2050,
           action: 'deposit',
+          amount: 5000
+        });
+        renderDynamicTimelineBlocks();
+        runSimulationAndRender();
+      });
+    }
+
+    const addReserveBWithdrawBtn = document.getElementById('addReserveBWithdrawBtn');
+    if (addReserveBWithdrawBtn) {
+      addReserveBWithdrawBtn.addEventListener('click', () => {
+        if (!params.reserveBBlocks) params.reserveBBlocks = [];
+        const lastBlock = params.reserveBBlocks[params.reserveBBlocks.length - 1];
+        const nextStart = lastBlock ? Math.min(2050, lastBlock.endYear + 1) : 2026;
+        params.reserveBBlocks.push({
+          id: Date.now(),
+          label: `ช่วงถอนออกเงินสำรอง B`,
+          startMonth: 1,
+          startYear: nextStart,
+          endMonth: 12,
+          endYear: 2050,
+          action: 'withdraw',
           amount: 5000
         });
         renderDynamicTimelineBlocks();
