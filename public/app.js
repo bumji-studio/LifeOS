@@ -820,11 +820,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalIncomeVal = filteredForSummary.reduce((sum, item) => sum + (item.income || 0), 0);
     const totalExpenseVal = filteredForSummary.reduce((sum, item) => sum + (item.expense || 0), 0);
 
+    // Find end-of-year balance for targetYear
+    const targetYearData = data.filter(item => item.year === targetYear);
+    const endOfYearItem = targetYearData.length > 0 ? targetYearData[targetYearData.length - 1] : null;
+    const fundABalance = endOfYearItem ? endOfYearItem.fundA : 0;
+    const reserveBBalance = endOfYearItem ? endOfYearItem.reserveB : 0;
+
     const statTotalIncome = document.getElementById('statTotalIncome');
     if (statTotalIncome) statTotalIncome.textContent = formatCompactCurrency(totalIncomeVal);
 
     const statTotalExpense = document.getElementById('statTotalExpense');
     if (statTotalExpense) statTotalExpense.textContent = formatCompactCurrency(totalExpenseVal);
+
+    const statTotalFundA = document.getElementById('statTotalFundA');
+    if (statTotalFundA) statTotalFundA.textContent = formatCompactCurrency(fundABalance);
+
+    const statTotalReserveB = document.getElementById('statTotalReserveB');
+    if (statTotalReserveB) statTotalReserveB.textContent = formatCompactCurrency(reserveBBalance);
 
     const countM = filteredForSummary.length;
     const yPart = Math.floor(countM / 12);
@@ -839,6 +851,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const statExpenseSubtext = document.getElementById('statExpenseSubtext');
     if (statExpenseSubtext) statExpenseSubtext.textContent = `สะสมถึง ธ.ค. ${targetYear}${durStr}`;
+
+    const statFundASubtext = document.getElementById('statFundASubtext');
+    if (statFundASubtext) statFundASubtext.textContent = `ยอด ณ ธ.ค. ${targetYear}`;
+
+    const statReserveBSubtext = document.getElementById('statReserveBSubtext');
+    if (statReserveBSubtext) statReserveBSubtext.textContent = `ยอด ณ ธ.ค. ${targetYear}`;
 
     const condoNetVal = Math.max(0, (parseFloat(params.condoGross) || 0) - (parseFloat(params.condoDebt) || 0));
     const statCondoNet = document.getElementById('statCondoNet');
@@ -1102,7 +1120,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Populate Stat Card Cutoff Year Selectors
     const statIncSel = document.getElementById('statIncomeYearSelect');
     const statExpSel = document.getElementById('statExpenseYearSelect');
-    [statIncSel, statExpSel].forEach(el => {
+    const statFundASel = document.getElementById('statFundAYearSelect');
+    const statReserveBSel = document.getElementById('statReserveBYearSelect');
+    [statIncSel, statExpSel, statFundASel, statReserveBSel].forEach(el => {
       if (!el) return;
       const curYear = financeState.summaryCutoffYear || 2050;
       el.innerHTML = '';
@@ -1755,13 +1775,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // Summary Stat Cards Year Cutoff Listeners
     const statIncSel = document.getElementById('statIncomeYearSelect');
     const statExpSel = document.getElementById('statExpenseYearSelect');
-    [statIncSel, statExpSel].forEach(sel => {
+    const statFundASel = document.getElementById('statFundAYearSelect');
+    const statReserveBSel = document.getElementById('statReserveBYearSelect');
+    [statIncSel, statExpSel, statFundASel, statReserveBSel].forEach(sel => {
       if (sel) {
         sel.addEventListener('change', (e) => {
           const val = parseInt(e.target.value);
           financeState.summaryCutoffYear = val;
           if (statIncSel) statIncSel.value = val;
           if (statExpSel) statExpSel.value = val;
+          if (statFundASel) statFundASel.value = val;
+          if (statReserveBSel) statReserveBSel.value = val;
           updateKPICards();
         });
       }
@@ -2474,8 +2498,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const statIncSel = document.getElementById('statIncomeYearSelect');
     const statExpSel = document.getElementById('statExpenseYearSelect');
+    const statFundASel = document.getElementById('statFundAYearSelect');
+    const statReserveBSel = document.getElementById('statReserveBYearSelect');
     if (statIncSel && financeState.summaryCutoffYear) statIncSel.value = financeState.summaryCutoffYear;
     if (statExpSel && financeState.summaryCutoffYear) statExpSel.value = financeState.summaryCutoffYear;
+    if (statFundASel && financeState.summaryCutoffYear) statFundASel.value = financeState.summaryCutoffYear;
+    if (statReserveBSel && financeState.summaryCutoffYear) statReserveBSel.value = financeState.summaryCutoffYear;
     
     const titleSpan = document.getElementById('chartRangeTitle');
     if (titleSpan) titleSpan.textContent = `${financeState.startYear} – ${financeState.endYear}`;
