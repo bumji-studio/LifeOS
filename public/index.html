@@ -358,6 +358,7 @@
             <!-- 3. Fund A & Reserve B -->
             <div class="tune-group">
               <h4><i class="fa-solid fa-chart-line text-fund-a"></i> 3. กองทุน (A) & สำรอง (B)</h4>
+              
               <div class="tune-item">
                 <label>เงินกองทุน (A) ตั้งต้น (บาท):</label>
                 <input type="number" id="paramFundAInit" value="500000" step="50000">
@@ -366,16 +367,44 @@
                 <label>ผลตอบแทนกองทุน (A) (% ต่อปี):</label>
                 <input type="number" id="paramFundAYield" value="10" step="0.5">
               </div>
-              <div class="tune-item">
-                <label>เงินฝากเข้ากองทุน (A) (ต.ค.26-เม.ย.27):</label>
-                <input type="number" id="paramFundADeposit" value="30000" step="5000">
+
+              <!-- กองทุน A Dynamic Timeline Blocks -->
+              <div style="display: flex; justify-content: space-between; align-items: center; margin: 12px 0 6px 0;">
+                <div style="font-weight: 700; color: #10B981; font-size: 0.88rem; display: flex; align-items: center; gap: 6px;">
+                  <i class="fa-solid fa-piggy-bank"></i> <span>ช่วงเวลาฝาก/ถอน กองทุน (A)</span>
+                </div>
+                <button type="button" id="addFundABlockBtn" style="font-size: 0.75rem; padding: 4px 10px; background: rgba(16, 185, 129, 0.15); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 6px; cursor: pointer; font-weight: 600;">
+                  <i class="fa-solid fa-plus"></i> เพิ่มช่วงกองทุน A
+                </button>
               </div>
+
+              <!-- Container for Dynamic Fund A Cards -->
+              <div id="fundABlocksContainer" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px;"></div>
+
+              <hr style="border:0; border-top: 1px dashed var(--border-color); margin: 12px 0;">
+
               <div class="tune-item">
                 <label>เงินสำรอง (B) ตั้งต้น (บาท):</label>
                 <input type="number" id="paramReserveBInit" value="300000" step="50000">
               </div>
+
+              <!-- เงินสำรอง B Dynamic Timeline Blocks -->
+              <div style="display: flex; justify-content: space-between; align-items: center; margin: 12px 0 6px 0;">
+                <div style="font-weight: 700; color: #F97316; font-size: 0.88rem; display: flex; align-items: center; gap: 6px;">
+                  <i class="fa-solid fa-vault"></i> <span>ช่วงเวลาฝาก/ถอน เงินสำรอง (B)</span>
+                </div>
+                <button type="button" id="addReserveBBlockBtn" style="font-size: 0.75rem; padding: 4px 10px; background: rgba(249, 115, 22, 0.15); color: #F97316; border: 1px solid rgba(249, 115, 22, 0.3); border-radius: 6px; cursor: pointer; font-weight: 600;">
+                  <i class="fa-solid fa-plus"></i> เพิ่มช่วงเงินสำรอง B
+                </button>
+              </div>
+
+              <!-- Container for Dynamic Reserve B Cards -->
+              <div id="reserveBBlocksContainer" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px;"></div>
+
+              <hr style="border:0; border-top: 1px dashed var(--border-color); margin: 12px 0;">
+
               <div class="tune-item">
-                <label>ถอนกองทุน (A) เติม (B) ครั้งละ:</label>
+                <label>ถอนกองทุน (A) เติม (B) อัตโนมัติครั้งละ:</label>
                 <input type="number" id="paramFundATransfer" value="200000" step="50000">
               </div>
             </div>
