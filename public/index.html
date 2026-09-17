@@ -169,6 +169,10 @@
           </div>
         </div>
         <div class="nav-right">
+          <button class="btn-success" id="saveParamsBtn">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span>บันทึกการตั้งค่า</span>
+          </button>
           <button class="btn-secondary" id="toggleTuneBtn">
             <i class="fa-solid fa-sliders"></i>
             <span>ปรับแต่งตัวแปร</span>
@@ -183,302 +187,98 @@
       <!-- Dashboard Scrollable Container -->
       <div class="finance-dashboard-container">
         
-        <!-- Top 3 Header Summary Stats Cards -->
+        <!-- Top 4 Header Summary Stats Cards -->
         <section class="top-stats-grid">
           <div class="stat-card glass-panel">
-            <h1 class="stat-val" id="statCondoNet">฿3.0M</h1>
-            <span class="stat-label">เงินขายคอนโดสุทธิ</span>
+            <div class="stat-card-header">
+              <span class="stat-label">เงินรายได้รวม</span>
+              <div class="stat-year-picker">
+                <span class="stat-picker-label">ณ สิ้นปี:</span>
+                <select id="statIncomeYearSelect" class="stat-year-select">
+                  <!-- Dynamically populated 2026-2050 -->
+                </select>
+              </div>
+            </div>
+            <h1 class="stat-val" id="statTotalIncome" style="color: #38BDF8;">฿0</h1>
+            <span class="stat-subtext" id="statIncomeSubtext">สะสมถึง ธ.ค. 2050</span>
           </div>
+
           <div class="stat-card glass-panel">
-            <h1 class="stat-val" id="statPF">฿2.7M</h1>
-            <span class="stat-label">เงินก้อน PF (อายุ 55)</span>
+            <div class="stat-card-header">
+              <span class="stat-label">เงินรายจ่ายรวม</span>
+              <div class="stat-year-picker">
+                <span class="stat-picker-label">ณ สิ้นปี:</span>
+                <select id="statExpenseYearSelect" class="stat-year-select">
+                  <!-- Dynamically populated 2026-2050 -->
+                </select>
+              </div>
+            </div>
+            <h1 class="stat-val" id="statTotalExpense" style="color: #F87171;">฿0</h1>
+            <span class="stat-subtext" id="statExpenseSubtext">สะสมถึง ธ.ค. 2050</span>
           </div>
-          <div class="stat-card glass-panel text-glow-primary">
-            <h1 class="stat-val" id="statNetWorthTarget">฿10.2M</h1>
-            <span class="stat-label">ประมาณการสินทรัพย์รวมปลายทาง</span>
+
+          <div class="stat-card glass-panel">
+            <div class="stat-card-header">
+              <span class="stat-label">เงินขายคอนโด</span>
+            </div>
+            <h1 class="stat-val" id="statCondoNet" style="color: #06B6D4;">฿3.5M</h1>
+            <span class="stat-subtext">เงินสุทธิจากการขายคอนโด</span>
+          </div>
+
+          <div class="stat-card glass-panel">
+            <div class="stat-card-header">
+              <span class="stat-label">เงิน PF</span>
+            </div>
+            <h1 class="stat-val" id="statPF" style="color: #EAB308;">฿2.7M</h1>
+            <span class="stat-subtext">เงินก้อน Provident Fund</span>
           </div>
         </section>
 
-        <!-- Financial Projection Chart Card -->
-        <section class="chart-card glass-panel">
-          <div class="chart-header">
-            <div class="chart-title">
-              <h3>มูลค่าสินทรัพย์ (บาท)</h3>
-            </div>
-            <div class="chart-view-toggle">
-              <button class="view-btn active" id="chartViewYearly">รายปี (ปีที่ N)</button>
-              <button class="view-btn" id="chartViewMonthly">รายเดือน</button>
-            </div>
-          </div>
 
-          <div class="chart-wrapper">
-            <canvas id="financeChart"></canvas>
-          </div>
-
-          <div class="chart-footer-label">
-            <span>จำนวนปีข้างหน้า (ปี 2026 เป็นปี 0 / อายุ 49)</span>
-          </div>
-        </section>
-
-        <!-- Interactive Model Controls with Start Year Selection & Amount Sliders -->
-        <section class="model-controls-card glass-panel">
-          <div class="controls-header">
-            <h2>ปรับแต่งตัวแปรแบบจำลอง (เลือกปีตั้งต้น & แถบจำนวนเงิน)</h2>
-            <span style="font-size: 0.8rem; color: var(--text-muted);">เลือกปีที่เริ่มต้นเกิดรายการ และปรับเลื่อนแถบจำนวนเงินเพื่อคำนวณจำลองผลลัพธ์ทันที</span>
-          </div>
-
-          <div class="controls-grid">
-            <!-- 1. เงินเดือนทำงานช่วงแรก -->
-            <div class="control-item">
-              <div class="control-label-row">
-                <label><i class="fa-solid fa-briefcase text-accent"></i> 1. เงินเดือนทำงานช่วงแรก</label>
-                <select id="selIncome1Year" class="year-select">
-                  <option value="2026" selected>เริ่มปี 2026 (ปี 0 / อายุ 49)</option>
-                  <option value="2027">เริ่มปี 2027 (ปี 1)</option>
-                </select>
-              </div>
-              <div class="control-input-row">
-                <input type="range" id="sliderIncome1" min="0" max="300000" value="95000" step="5000">
-                <div class="slider-badge" id="badgeIncome1">95,000 ฿/ด.</div>
-              </div>
-            </div>
-
-            <!-- 2. เงินเดือนหลังลาออก -->
-            <div class="control-item">
-              <div class="control-label-row">
-                <label><i class="fa-solid fa-user-doctor text-accent"></i> 2. เงินเดือนหลังลาออก</label>
-                <select id="selIncome2Year" class="year-select">
-                  <option value="2027" selected>เริ่มลาออก: พ.ค. 2027 (ปี 1)</option>
-                  <option value="2028">เริ่มลาออก: ปี 2028 (ปี 2)</option>
-                  <option value="2029">เริ่มลาออก: ปี 2029 (ปี 3)</option>
-                  <option value="2030">เริ่มลาออก: ปี 2030 (ปี 4)</option>
-                </select>
-              </div>
-              <div class="control-input-row">
-                <input type="range" id="sliderIncome2" min="0" max="100000" value="10000" step="1000">
-                <div class="slider-badge" id="badgeIncome2">10,000 ฿/ด.</div>
-              </div>
-            </div>
-
-            <!-- 3. เงินรายจ่ายช่วงผ่อนคอนโด -->
-            <div class="control-item">
-              <div class="control-label-row">
-                <label><i class="fa-solid fa-credit-card text-accent"></i> 3. เงินรายจ่าย (ช่วงผ่อนคอนโด)</label>
-                <select id="selExp1Year" class="year-select">
-                  <option value="2026" selected>เริ่มปี 2026 (ปี 0)</option>
-                  <option value="2027">เริ่มปี 2027 (ปี 1)</option>
-                </select>
-              </div>
-              <div class="control-input-row">
-                <input type="range" id="sliderExp1" min="0" max="200000" value="60000" step="5000">
-                <div class="slider-badge" id="badgeExp1">60,000 ฿/ด.</div>
-              </div>
-            </div>
-
-            <!-- 4. รายจ่ายหลังหมดภาระคอนโด -->
-            <div class="control-item">
-              <div class="control-label-row">
-                <label><i class="fa-solid fa-house-circle-check text-accent"></i> 4. รายจ่ายหลังหมดภาระคอนโด</label>
-                <select id="selExp2Year" class="year-select">
-                  <option value="2029" selected>เริ่มลดรายจ่าย: ม.ค. 2029 (ปี 3)</option>
-                  <option value="2028">เริ่มลดรายจ่าย: ปี 2028 (ปี 2)</option>
-                  <option value="2030">เริ่มลดรายจ่าย: ปี 2030 (ปี 4)</option>
-                  <option value="2031">เริ่มลดรายจ่าย: ปี 2031 (ปี 5)</option>
-                </select>
-              </div>
-              <div class="control-input-row">
-                <input type="range" id="sliderExp2" min="0" max="100000" value="15000" step="1000">
-                <div class="slider-badge" id="badgeExp2">15,000 ฿/ด.</div>
-              </div>
-            </div>
-
-            <!-- 5. เงินขายคอนโด -->
-            <div class="control-item">
-              <div class="control-label-row">
-                <label><i class="fa-solid fa-building text-summary"></i> 5. เงินขายคอนโดสุทธิ</label>
-                <select id="selCondoYear" class="year-select">
-                  <option value="2026">ปีที่ขาย: 2026 (ปี 0)</option>
-                  <option value="2027">ปีที่ขาย: 2027 (ปี 1)</option>
-                  <option value="2028" selected>ปีที่ขาย: ธ.ค. 2028 (ปี 2)</option>
-                  <option value="2029">ปีที่ขาย: 2029 (ปี 3)</option>
-                  <option value="2030">ปีที่ขาย: 2030 (ปี 4)</option>
-                </select>
-              </div>
-              <div class="control-input-row">
-                <input type="range" id="sliderCondoNet" min="0" max="10000000" value="3000000" step="100000">
-                <div class="slider-badge" id="badgeCondoNet">฿3.0M</div>
-              </div>
-            </div>
-
-            <!-- 6. เงินถอน PF -->
-            <div class="control-item">
-              <div class="control-label-row">
-                <label><i class="fa-solid fa-sack-dollar text-pf"></i> 6. เงินถอน PF (หักภาษี 15% ก่อนอายุ 55)</label>
-                <select id="selPFYear" class="year-select">
-                  <option value="2027">ปีที่ถอน: 2027 (อายุ 50 - หักภาษี 15%)</option>
-                  <option value="2028">ปีที่ถอน: 2028 (อายุ 51 - หักภาษี 15%)</option>
-                  <option value="2029">ปีที่ถอน: 2029 (อายุ 52 - หักภาษี 15%)</option>
-                  <option value="2030">ปีที่ถอน: 2030 (อายุ 53 - หักภาษี 15%)</option>
-                  <option value="2031">ปีที่ถอน: 2031 (อายุ 54 - หักภาษี 15%)</option>
-                  <option value="2032" selected>ปีที่ถอน: ม.ค. 2032 (อายุ 55 - ยกเว้นภาษี 0%)</option>
-                  <option value="2035">ปีที่ถอน: 2035 (อายุ 58 - ยกเว้นภาษี 0%)</option>
-                  <option value="2037">ปีที่ถอน: 2037 (อายุ 60 - ยกเว้นภาษี 0%)</option>
-                </select>
-              </div>
-              <div class="control-input-row">
-                <input type="range" id="sliderPF" min="0" max="10000000" value="2700000" step="100000">
-                <div class="slider-badge" id="badgePF">฿2.7M</div>
-              </div>
-
-              <!-- PF Tax Calculation Status Box for Version 2 -->
-              <div class="pf-tax-box glass-panel" id="pfTaxInfoBox" style="margin-top: 10px; padding: 12px 14px; border-radius: 10px; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); font-size: 0.82rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 600;">
-                  <span id="pfTaxTitle"><i class="fa-solid fa-circle-check" style="color: #34D399;"></i> เงื่อนไขภาษี PF (ถอนอายุ 55+):</span>
-                  <span id="pfTaxBadge" style="background: rgba(16, 185, 129, 0.2); color: #34D399; padding: 3px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700;">ยกเว้นภาษี 0%</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; margin-top: 8px; color: var(--text-muted);">
-                  <span>ยอดเงินโดนหักภาษี ณ ที่จ่าย (15%):</span>
-                  <strong id="pfTaxAmountVal" style="color: #F87171; font-weight: 700;">฿0</strong>
-                </div>
-                <div style="display: flex; justify-content: space-between; margin-top: 6px; color: var(--text-muted);">
-                  <span>เงินถอนสุทธิที่นำไปคำนวณจริง:</span>
-                  <strong id="pfNetReceivedVal" style="color: #34D399; font-size: 0.95rem; font-weight: 700;">฿2,700,000</strong>
-                </div>
-              </div>
-            </div>
-
-            <!-- 7. เงินฝากเข้ากองทุน (A) -->
-            <div class="control-item">
-              <div class="control-label-row">
-                <label><i class="fa-solid fa-chart-line text-fund-a"></i> 7. เงินฝากเข้ากองทุน (A) (เริ่มปี 2026 ตั้งต้น ฿500,000)</label>
-              </div>
-              <div class="control-input-row" style="margin-top: 6px;">
-                <span style="font-size: 0.8rem; color: var(--text-muted);">ฝากเพิ่มเดือนละ:</span>
-                <input type="range" id="sliderFundADeposit" min="0" max="100000" value="30000" step="2000" style="flex:1;">
-                <div class="slider-badge" id="badgeFundADeposit">30,000 ฿/ด.</div>
-              </div>
-              <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 6px; font-size: 0.82rem; background: rgba(15, 23, 42, 0.5); padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border-color);">
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                  <input type="checkbox" id="chkFundADepositEveryMonth">
-                  <span style="color: var(--text-main); font-weight: 500;">ฝากทุกเดือน (ฝากต่อเนื่องทุกปี)</span>
-                </label>
-                <div id="boxFundADepositStop" style="display: flex; align-items: center; gap: 6px; color: var(--text-muted); flex-wrap: wrap;">
-                  <span>หรือ หยุดฝาก: เดือน</span>
-                  <select id="selFundADepositEndMonth" style="background: rgba(30,41,59,0.8); color:#FFF; padding:3px 8px; border-radius:6px; border:1px solid var(--border-color); font-size:0.8rem;">
-                    <option value="4" selected>เมษายน (04)</option>
-                    <option value="12">ธันวาคม (12)</option>
-                    <option value="1">มกราคม (01)</option>
-                  </select>
-                  <span>ปี</span>
-                  <select id="selFundADepositEndYear" class="year-select" style="font-size:0.8rem; padding:3px 8px;">
-                    <!-- Populated dynamically 2026-2050 -->
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <!-- 7.2. ถอนเงินจากกองทุน (A) ย้ายเข้าสะสมทรัพย์ (B) -->
-            <div class="control-item" style="border: 1px dashed rgba(16, 185, 129, 0.4); background: rgba(16, 185, 129, 0.05);">
-              <div class="control-label-row">
-                <label><i class="fa-solid fa-hand-holding-dollar text-fund-a"></i> 7.2 ถอนเงินกองทุน (A) ย้ายไปสะสมทรัพย์ (B)</label>
-              </div>
-              <div style="display: flex; gap: 8px; align-items: center; margin-top: 6px; flex-wrap: wrap;">
-                <span style="font-size: 0.8rem; color: var(--text-muted);">เริ่มถอนปี:</span>
-                <select id="selFundAWithdrawYear" class="year-select" style="flex: 1; font-size:0.82rem;">
-                  <!-- Populated dynamically 2026-2050 -->
-                </select>
-              </div>
-              <div class="control-input-row" style="margin-top: 6px;">
-                <span style="font-size: 0.8rem; color: var(--text-muted);">จำนวนเงินถอน:</span>
-                <input type="range" id="sliderFundAWithdrawAmount" min="0" max="10000000" value="0" step="50000" style="flex:1;">
-                <div class="slider-badge" id="badgeFundAWithdrawAmount">฿0</div>
-              </div>
-              <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 6px; font-size: 0.82rem; background: rgba(15, 23, 42, 0.5); padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border-color);">
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                  <input type="checkbox" id="chkFundAWithdrawEveryYear">
-                  <span style="color: var(--text-main); font-weight: 500;">ถอนเท่ากันทุกปี (ถอนต่อเนื่องทุกปีตั้งแต่ปีที่เริ่ม)</span>
-                </label>
-                <div id="boxFundAWithdrawStop" style="display: flex; align-items: center; gap: 6px; color: var(--text-muted); flex-wrap: wrap;">
-                  <span>หรือ หยุดถอน: ปี</span>
-                  <select id="selFundAWithdrawEndYear" class="year-select" style="font-size:0.8rem; padding:3px 8px;">
-                    <!-- Populated dynamically 2026-2050 -->
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <!-- 8. เงินสำรองสะสมทรัพย์ (B) -->
-            <div class="control-item">
-              <div class="control-label-row">
-                <label><i class="fa-solid fa-piggy-bank text-reserve-b"></i> 8. เงินสำรองสะสมทรัพย์ (B)</label>
-              </div>
-              <div style="font-size: 0.8rem; color: #34D399; margin-top: 4px; font-weight: 600;">
-                <i class="fa-solid fa-circle-info"></i> เริ่มปี 2026 จำนวน 300,000 บาท (ใช้เป็นฐานตั้งต้นในการคำนวณ)
-              </div>
-              <div class="control-input-row" style="margin-top: 6px;">
-                <span style="font-size: 0.8rem; color: var(--text-muted);">จำนวนเงินตั้งต้น 2026:</span>
-                <input type="range" id="sliderReserveBInit" min="0" max="2000000" value="300000" step="50000" style="flex:1;">
-                <div class="slider-badge" id="badgeReserveBInit">฿300k</div>
-              </div>
-            </div>
-
-            <!-- 9. ผลตอบแทนกองทุน (A) % ต่อปี -->
-            <div class="control-item">
-              <div class="control-label-row">
-                <label><i class="fa-solid fa-percent text-fund-a"></i> 9. ผลตอบแทนกองทุน (A) ต่อปี (%)</label>
-              </div>
-              <div class="control-input-row">
-                <input type="range" id="sliderFundAYield" min="0" max="20" value="10.0" step="0.5">
-                <div class="slider-badge" id="badgeFundAYield">10.0%</div>
-              </div>
-            </div>
-
-            <!-- 10. กรอบระยะเวลาจำลอง (ปี) -->
-            <div class="control-item">
-              <div class="control-label-row">
-                <label><i class="fa-solid fa-calendar-range text-accent"></i> 10. กรอบระยะเวลาจำลอง (ปี)</label>
-              </div>
-              <div class="control-input-row">
-                <input type="range" id="sliderHorizon" min="1" max="24" value="24" step="1">
-                <div class="slider-badge" id="badgeHorizon">24 ปี</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="model-footnote" id="modelFootnote">
-            *คำนวณเงินเฟ้อและผลตอบแทนเฉลี่ย 10% ทบต้นของเงินลงทุนในกองทุน (A) พร้อมบันทึกการเติมเงินคอนโด 3 ล้าน (ปีที่ 2 / 2028) และ PF 2.7 ล้าน (ปีที่ 6 / 2032)
-          </div>
-        </section>
-
-        <!-- Advanced Tuning Drawer (Collapsible) -->
-        <section class="tuning-drawer glass-panel" id="tuningDrawer" style="display: none;">
+        <!-- Advanced Tuning Drawer (Parameter Controls) -->
+        <section class="tuning-drawer glass-panel" id="tuningDrawer" style="display: block;">
           <div class="drawer-header">
             <div>
               <h3><i class="fa-solid fa-sliders text-accent"></i> ปรับแต่งตัวแปรแบบละเอียด (Advanced Parameters & Date Overrides)</h3>
             </div>
-            <button class="btn-reset" id="resetParamsBtn"><i class="fa-solid fa-rotate-left"></i> รีเซ็ตเป็นค่าเริ่มต้น</button>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn-success" id="saveParamsBtnDrawer"><i class="fa-solid fa-floppy-disk"></i> บันทึกการตั้งค่า</button>
+              <button class="btn-reset" id="resetParamsBtn"><i class="fa-solid fa-rotate-left"></i> รีเซ็ตเป็นค่าเริ่มต้น</button>
+            </div>
           </div>
           
           <div class="tuning-grid">
-            <!-- 1. Income & Expenses -->
+            <!-- 1. Income & Expenses (Dynamic Timeline Builder) -->
             <div class="tune-group">
-              <h4><i class="fa-solid fa-money-bill-transfer text-accent"></i> 1. รายได้ & ค่าใช้จ่าย</h4>
-              <div class="tune-item">
-                <label>รายได้ ต.ค. 2026 - เม.ย. 2027 (บาท/เดือน):</label>
-                <input type="number" id="paramIncomePhase1" value="95000" step="5000">
+              <h4><i class="fa-solid fa-timeline text-accent"></i> 1. รายได้ & ค่าใช้จ่าย (Dynamic Timeline)</h4>
+              
+              <!-- รายได้ (Income Section) -->
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div style="font-weight: 700; color: #38BDF8; font-size: 0.88rem; display: flex; align-items: center; gap: 6px;">
+                  <i class="fa-solid fa-hand-holding-dollar"></i> <span>ช่วงเวลารายได้ (Income Stages)</span>
+                </div>
+                <button type="button" id="addIncomeBlockBtn" style="font-size: 0.75rem; padding: 4px 10px; background: rgba(56, 189, 248, 0.15); color: #38BDF8; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 6px; cursor: pointer; font-weight: 600;">
+                  <i class="fa-solid fa-plus"></i> เพิ่มช่วงรายได้
+                </button>
               </div>
-              <div class="tune-item">
-                <label>รายได้ ตั้งแต่ พ.ค. 2027 เป็นต้นไป (บาท/เดือน):</label>
-                <input type="number" id="paramIncomePhase2" value="10000" step="1000">
+
+              <!-- Container for Dynamic Income Cards -->
+              <div id="incomeBlocksContainer" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;"></div>
+
+              <hr style="border:0; border-top: 1px dashed var(--border-color); margin: 14px 0;">
+
+              <!-- รายจ่าย (Expenses Section) -->
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div style="font-weight: 700; color: #F87171; font-size: 0.88rem; display: flex; align-items: center; gap: 6px;">
+                  <i class="fa-solid fa-receipt"></i> <span>ช่วงเวลารายจ่าย (Expense Stages)</span>
+                </div>
+                <button type="button" id="addExpBlockBtn" style="font-size: 0.75rem; padding: 4px 10px; background: rgba(248, 113, 113, 0.15); color: #F87171; border: 1px solid rgba(248, 113, 113, 0.3); border-radius: 6px; cursor: pointer; font-weight: 600;">
+                  <i class="fa-solid fa-plus"></i> เพิ่มช่วงรายจ่าย
+                </button>
               </div>
-              <div class="tune-item">
-                <label>ค่าใช้จ่ายช่วงแรก ต.ค. 2026 - ธ.ค. 2028 (บาท/เดือน):</label>
-                <input type="number" id="paramExpPhase1" value="60000" step="5000">
-              </div>
-              <div class="tune-item">
-                <label>ค่าใช้จ่ายช่วงหลัง ตั้งแต่ ม.ค. 2029 (บาท/เดือน):</label>
-                <input type="number" id="paramExpPhase2" value="15000" step="1000">
-              </div>
+
+              <!-- Container for Dynamic Expense Cards -->
+              <div id="expBlocksContainer" style="display: flex; flex-direction: column; gap: 10px;"></div>
             </div>
 
             <!-- 2. Condo & PF -->
@@ -515,6 +315,7 @@
               <div class="tune-item">
                 <label>เงินสุทธิคอนโดนำไปฝากที่:</label>
                 <select id="paramCondoDest" style="background:rgba(30,41,59,0.8); color:#FFF; padding:8px; border-radius:8px; border:1px solid var(--border-color);">
+                  <option value="separate" selected>แยกเป็นเส้นเงินขายคอนโดต่างหาก (ไม่รวมก้อน A/B)</option>
                   <option value="fundA">ฝากเข้ากองทุน (A) ทำกำไรต่อ</option>
                   <option value="reserveB">ฝากเข้าเงินสำรอง (B)</option>
                 </select>
@@ -579,11 +380,11 @@
               </div>
             </div>
 
-            <!-- 4. Yearly Custom Overrides Table -->
+            <!-- 4. Dynamic Yearly Income & Expense Difference Summary -->
             <div class="tune-group" style="grid-column: 1 / -1;">
-              <h4><i class="fa-solid fa-calendar-days text-accent"></i> 4. กำหนด รายได้ & ค่าใช้จ่าย รายปีอิสระ (Custom Yearly Overrides 2026 - 2050)</h4>
+              <h4><i class="fa-solid fa-calculator text-accent"></i> 4. สรุปส่วนต่างรายได้ & รายจ่าย รายปี (คำนวณจากข้อ 1 - 3 อัตโนมัติ)</h4>
               <span style="font-size:0.78rem; color:var(--text-muted); margin-bottom:8px; display:block;">
-                คุณสามารถพิมพ์แก้ไข รายได้/เดือน และ ค่าใช้จ่าย/เดือน แยกเฉพาะรายปีได้ที่ตารางด้านล่างนี้ ระบบจะนำค่าที่คุณปรับไปคำนวณแทนค่าเบสไลน์โดยอัตโนมัติ
+                สรุปยอดรายได้ รายจ่าย และส่วนต่างสุทธิในแต่ละปี (คำนวณจากเงื่อนไข Dynamic Timeline และพารามิเตอร์ที่คุณเลือกไว้ในข้อ 1 - 3)
               </span>
               
               <div style="max-height: 280px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 10px;">
@@ -591,13 +392,14 @@
                   <thead>
                     <tr>
                       <th style="text-align: center;">ปี (อายุ)</th>
-                      <th style="text-align: center;">รายได้/เดือน (บาท)</th>
-                      <th style="text-align: center;">ค่าใช้จ่าย/เดือน (บาท)</th>
-                      <th style="text-align: center;">ส่วนต่าง/เดือน</th>
+                      <th style="text-align: center;">รายได้ (บาท/เดือน)</th>
+                      <th style="text-align: center;">รายจ่าย (บาท/เดือน)</th>
+                      <th style="text-align: center;">ส่วนต่างสุทธิ (บาท/เดือน)</th>
+                      <th style="text-align: center;">ส่วนต่างรวมทั้งปี (บาท/ปี)</th>
                     </tr>
                   </thead>
-                  <tbody id="yearlyOverrideTbody">
-                    <!-- Dynamic Yearly Overrides Rows -->
+                  <tbody id="yearlySummaryTbody">
+                    <!-- Dynamic Yearly Summary Rows Generated Automatically -->
                   </tbody>
                 </table>
               </div>
@@ -609,12 +411,33 @@
         <section class="chart-card glass-panel">
           <div class="chart-header">
             <div class="chart-title">
-              <h3><i class="fa-solid fa-chart-area"></i> กราฟแสดงแนวโน้มเงินคงเหลือและสินทรัพย์ (2026 - 2050)</h3>
+              <h3><i class="fa-solid fa-chart-area text-accent"></i> <span>กราฟแสดงแนวโน้มเงินคงเหลือและสินทรัพย์ (<span id="chartRangeTitle">2026 – 2050</span>)</span></h3>
               <span class="chart-subtitle">จำลองกระแสเงินสดรายเดือนพร้อมสเกลอายุ</span>
             </div>
-            <div class="chart-view-toggle">
-              <button class="view-btn active" id="chartViewMonthly">รายเดือน</button>
-              <button class="view-btn" id="chartViewYearly">รายปี</button>
+            
+            <div class="chart-controls-group">
+              <!-- Start Year & End Year Selection -->
+              <div class="chart-range-picker">
+                <div class="picker-item">
+                  <label for="chartStartYearSelect"><i class="fa-regular fa-calendar-play"></i> เริ่มต้น (ปี):</label>
+                  <select id="chartStartYearSelect" class="chart-year-select">
+                    <!-- Populated 2026 - 2050 -->
+                  </select>
+                </div>
+                <span class="picker-separator">ถึง</span>
+                <div class="picker-item">
+                  <label for="chartEndYearSelect"><i class="fa-regular fa-calendar-check"></i> สิ้นสุด (ปี):</label>
+                  <select id="chartEndYearSelect" class="chart-year-select">
+                    <!-- Populated 2026 - 2050 -->
+                  </select>
+                </div>
+              </div>
+
+              <!-- View Mode Toggle Buttons -->
+              <div class="chart-view-toggle">
+                <button class="view-btn active" id="chartViewMonthly">รายเดือน</button>
+                <button class="view-btn" id="chartViewYearly">รายปี</button>
+              </div>
             </div>
           </div>
 
@@ -658,6 +481,12 @@
       </div>
     </main>
 
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast-notification" id="toastNotification" style="display: none;">
+    <i class="fa-solid fa-circle-check"></i>
+    <span id="toastMsg">บันทึกการตั้งค่าเรียบร้อยแล้ว!</span>
   </div>
 
   <!-- JavaScript Main App -->

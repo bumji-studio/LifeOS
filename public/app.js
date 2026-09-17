@@ -286,15 +286,24 @@ document.addEventListener('DOMContentLoaded', () => {
     fundADepositEndYear: 2027,
     fundATransfer: 200000, // chunk to transfer when B is depleted
     reserveBInit: 300000,
-    incomePhase1: 95000, // oct 26 - apr 27
-    incomePhase2: 10000, // may 27 onwards
-    expPhase1: 60000, // oct 26 - dec 28
-    expPhase2: 15000, // jan 29 onwards
-    condoGross: 4000000, // gross sale price
-    condoDebt: 1000000, // bank mortgage debt
+
+    // Dynamic Income Timeline Stages (with Month & Year Precision)
+    incomeBlocks: [
+      { id: 1, label: 'งานประจำช่วงแรก', startMonth: 10, startYear: 2026, endMonth: 4, endYear: 2027, amount: 95000, type: 'fixed', stepAmount: 0 },
+      { id: 2, label: 'หลังลาออก', startMonth: 5, startYear: 2027, endMonth: 12, endYear: 2050, amount: 10000, type: 'fixed', stepAmount: 0 }
+    ],
+
+    // Dynamic Expense Timeline Stages (with Month & Year Precision)
+    expBlocks: [
+      { id: 1, label: 'ช่วงผ่อนคอนโด', startMonth: 10, startYear: 2026, endMonth: 12, endYear: 2028, amount: 60000, type: 'fixed', stepAmount: 0 },
+      { id: 2, label: 'หลังหมดภาระคอนโด', startMonth: 1, startYear: 2029, endMonth: 12, endYear: 2050, amount: 15000, type: 'fixed', stepAmount: 0 }
+    ],
+
+    condoGross: 5500000, // gross sale price
+    condoDebt: 2000000, // bank mortgage debt
     condoMonth: 12, // sale month
     condoYear: 2028, // sale year
-    condoDest: 'fundA', // 'fundA' | 'reserveB'
+    condoDest: 'separate', // 'separate' | 'fundA' | 'reserveB'
     pfAmount: 2700000, // payout amount
     pfMonth: 1, // payout month
     pfYear: 2032, // payout year
@@ -314,6 +323,7 @@ document.addEventListener('DOMContentLoaded', () => {
     period: '2026-2050',
     startYear: 2026,
     endYear: 2050,
+    summaryCutoffYear: 2050,
     viewMode: 'monthly', // 'monthly' | 'yearly'
     chartInstance: null,
     fullMonthlyData: [],
@@ -465,20 +475,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Milestone 2: Dynamic Sale of Condo (Default Month/Year)
         let condoEventThisMonth = false;
+        let condoNetValThisMonth = 0;
         const targetCondoYear = parseInt(params.condoYear) || 2028;
         const targetCondoMonth = parseInt(params.condoMonth) || 12;
         if (y === targetCondoYear && m === targetCondoMonth) {
           const gross = parseFloat(params.condoGross) || 0;
           const debt = parseFloat(params.condoDebt) || 0;
-          const condoNetVal = Math.max(0, gross - debt);
+          condoNetValThisMonth = Math.max(0, gross - debt);
           if (params.condoDest === 'reserveB') {
-            reserveB += condoNetVal;
-          } else if (params.condoDest === 'pf') {
-            pfBalance += condoNetVal;
+            reserveB += condoNetValThisMonth;
+            condoProceeds = 0;
+          } else if (params.condoDest === 'fundA') {
+            fundA += condoNetValThisMonth;
+            condoProceeds = 0;
           } else {
-            fundA += condoNetVal; // Default: Fund A
+            // Default / 'separate': Separate line for Condo Proceeds
+            condoProceeds += condoNetValThisMonth;
           }
-          condoProceeds = condoNetVal;
           condoEventThisMonth = true;
         }
 
@@ -529,39 +542,77 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         depositToA = isDepositActive ? (parseFloat(params.fundADeposit) || 0) : 0;
 
-        // Check Yearly Overrides for Income
+        const currentKey = y * 12 + m;
+
+        // Check Income from Dynamic Timeline Blocks
         if (params.yearlyOverrides[y] && params.yearlyOverrides[y].income !== undefined) {
           income = parseFloat(params.yearlyOverrides[y].income);
         } else {
-          income = isPhase1 ? (parseFloat(params.incomePhase1) || 0) : (parseFloat(params.incomePhase2) || 0);
-        }
-
-        // Check Yearly Overrides for Expense
-        if (params.yearlyOverrides[y] && params.yearlyOverrides[y].expense !== undefined) {
-          expense = parseFloat(params.yearlyOverrides[y].expense);
-        } else {
-          if (y < 2028 || (y === 2028 && m <= 12)) {
-            expense = parseFloat(params.expPhase1) || 0;
-          } else {
-            expense = parseFloat(params.expPhase2) || 0;
+          if (params.incomeBlocks && params.incomeBlocks.length > 0) {
+            let match = params.incomeBlocks.find(b => {
+              const bStart = (b.startYear || 2026) * 12 + (b.startMonth || 1);
+              const bEnd = (b.endYear || 2050) * 12 + (b.endMonth || 12);
+              return currentKey >= bStart && currentKey <= bEnd;
+            });
+            if (!match) {
+              const past = params.incomeBlocks.filter(b => {
+                const bStart = (b.startYear || 2026) * 12 + (b.startMonth || 1);
+                return currentKey >= bStart;
+              });
+              if (past.length > 0) match = past[past.length - 1];
+            }
+            if (match) {
+              const baseAmt = parseFloat(match.amount) || 0;
+              if (match.type === 'step') {
+                const bStart = (match.startYear || 2026) * 12 + (match.startMonth || 1);
+                const monthsPassed = Math.max(0, currentKey - bStart);
+                const yearsPassed = Math.floor(monthsPassed / 12);
+                const stepAmt = parseFloat(match.stepAmount) || 0;
+                income = baseAmt + (yearsPassed * stepAmt);
+              } else {
+                income = baseAmt;
+              }
+            }
           }
         }
 
-        // Surplus in Phase 1
+        // Check Expense from Dynamic Timeline Blocks
+        if (params.yearlyOverrides[y] && params.yearlyOverrides[y].expense !== undefined) {
+          expense = parseFloat(params.yearlyOverrides[y].expense);
+        } else {
+          if (params.expBlocks && params.expBlocks.length > 0) {
+            let match = params.expBlocks.find(b => {
+              const bStart = (b.startYear || 2026) * 12 + (b.startMonth || 1);
+              const bEnd = (b.endYear || 2050) * 12 + (b.endMonth || 12);
+              return currentKey >= bStart && currentKey <= bEnd;
+            });
+            if (!match) {
+              const past = params.expBlocks.filter(b => {
+                const bStart = (b.startYear || 2026) * 12 + (b.startMonth || 1);
+                return currentKey >= bStart;
+              });
+              if (past.length > 0) match = past[past.length - 1];
+            }
+            if (match) {
+              const baseAmt = parseFloat(match.amount) || 0;
+              if (match.type === 'step') {
+                const bStart = (match.startYear || 2026) * 12 + (match.startMonth || 1);
+                const monthsPassed = Math.max(0, currentKey - bStart);
+                const yearsPassed = Math.floor(monthsPassed / 12);
+                const stepAmt = parseFloat(match.stepAmount) || 0;
+                expense = baseAmt + (yearsPassed * stepAmt);
+              } else {
+                expense = baseAmt;
+              }
+            }
+          }
+        }
+
+        // Surplus handling in Phase 1
         if (isPhase1) {
           const surplus = income - expense - depositToA;
           if (surplus > 0) {
             reserveB += surplus;
-          }
-        } else {
-          // Phase 2: May 2027 onwards
-          income = parseFloat(params.incomePhase2) || 0;
-
-          // Expense until Dec 2028 vs Jan 2029 onwards
-          if (y < 2028 || (y === 2028 && m <= 12)) {
-            expense = parseFloat(params.expPhase1) || 0; // 60,000 THB/mo
-          } else {
-            expense = parseFloat(params.expPhase2) || 0; // 15,000 THB/mo
           }
         }
 
@@ -590,13 +641,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 // If even after transfer reserveB is still negative, pull remaining directly from Fund A
                 fundA += reserveB; // reserveB is negative
                 reserveB = 0;
+
+                // If Fund A is also exhausted (fundA < 0), pull from condoProceeds if available
+                if (fundA < 0 && condoProceeds > 0) {
+                  condoProceeds += fundA; // fundA is negative
+                  if (condoProceeds < 0) condoProceeds = 0;
+                  fundA = 0;
+                }
               }
             }
           }
         }
 
         // Calculate Total Net Worth & Cashflow
-        const totalNetWorth = fundA + reserveB + pfBalance;
+        const totalNetWorth = fundA + reserveB + pfBalance + condoProceeds;
         const liquidCashflow = reserveB; // Reserve B is liquid cash balance
 
         const labelStr = `${thaiMonths[m - 1]} ${y}`;
@@ -617,7 +675,7 @@ document.addEventListener('DOMContentLoaded', () => {
           condoProceeds: Math.round(condoProceeds),
           totalNetWorth: Math.round(totalNetWorth),
           liquidCashflow: Math.round(liquidCashflow),
-          milestone: condoEventThisMonth ? `ขายคอนโด (+฿${formatCompactCurrency(condoProceeds)} เข้ากองทุน A)` : (pfEventThisMonth ? (targetPFYear < 2032 ? `ถอน PF ก่อนอายุ 55 (สุทธิ ฿${formatCompactCurrency(pfNetReceivedThisMonth)} / หักภาษี 15% ฿${formatCompactCurrency(pfTaxDeductedThisMonth)})` : `รับเงิน PF (+฿${formatCompactCurrency(pfNetReceivedThisMonth)})`) : (fundAWithdrawEventThisMonth ? `ถอนกองทุน A ย้ายเข้าสะสมทรัพย์ B (+฿${formatCompactCurrency(actualFundAWithdrawVal)})` : (fundATransferEvent ? 'เติมเงิน B จาก A (ขาดแคลน)' : '')))
+          milestone: condoEventThisMonth ? (params.condoDest === 'separate' ? `ขายคอนโด (รับเงินสุทธิ ฿${formatCompactCurrency(condoNetValThisMonth)} แยกเส้น)` : (params.condoDest === 'fundA' ? `ขายคอนโด (+฿${formatCompactCurrency(condoNetValThisMonth)} เข้ากองทุน A)` : `ขายคอนโด (+฿${formatCompactCurrency(condoNetValThisMonth)} เข้าสะสมทรัพย์ B)`)) : (pfEventThisMonth ? (targetPFYear < 2032 ? `ถอน PF ก่อนอายุ 55 (สุทธิ ฿${formatCompactCurrency(pfNetReceivedThisMonth)} / หักภาษี 15% ฿${formatCompactCurrency(pfTaxDeductedThisMonth)})` : `รับเงิน PF (+฿${formatCompactCurrency(pfNetReceivedThisMonth)})`) : (fundAWithdrawEventThisMonth ? `ถอนกองทุน A ย้ายเข้าสะสมทรัพย์ B (+฿${formatCompactCurrency(actualFundAWithdrawVal)})` : (fundATransferEvent ? 'เติมเงิน B จาก A (ขาดแคลน)' : '')))
         });
       }
     }
@@ -710,10 +768,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const data = financeState.fullMonthlyData;
     if (!data || data.length === 0) return;
 
-    // Get latest item in selected filter or overall
-    const lastItem = financeState.filteredData[financeState.filteredData.length - 1] || data[data.length - 1];
+    const targetYear = financeState.summaryCutoffYear || 2050;
+    const filteredForSummary = data.filter(item => item.year <= targetYear);
 
-    // Reference Header Stat Cards
+    // Total Combined Income and Expense up to summaryCutoffYear
+    const totalIncomeVal = filteredForSummary.reduce((sum, item) => sum + (item.income || 0), 0);
+    const totalExpenseVal = filteredForSummary.reduce((sum, item) => sum + (item.expense || 0), 0);
+
+    const statTotalIncome = document.getElementById('statTotalIncome');
+    if (statTotalIncome) statTotalIncome.textContent = formatCompactCurrency(totalIncomeVal);
+
+    const statTotalExpense = document.getElementById('statTotalExpense');
+    if (statTotalExpense) statTotalExpense.textContent = formatCompactCurrency(totalExpenseVal);
+
+    const countM = filteredForSummary.length;
+    const yPart = Math.floor(countM / 12);
+    const mPart = countM % 12;
+    let durStr = '';
+    if (yPart > 0 && mPart > 0) durStr = ` (${yPart} ปี ${mPart} เดือน)`;
+    else if (yPart > 0) durStr = ` (${yPart} ปี)`;
+    else durStr = ` (${mPart} เดือน)`;
+
+    const statIncomeSubtext = document.getElementById('statIncomeSubtext');
+    if (statIncomeSubtext) statIncomeSubtext.textContent = `สะสมถึง ธ.ค. ${targetYear}${durStr}`;
+
+    const statExpenseSubtext = document.getElementById('statExpenseSubtext');
+    if (statExpenseSubtext) statExpenseSubtext.textContent = `สะสมถึง ธ.ค. ${targetYear}${durStr}`;
+
     const condoNetVal = Math.max(0, (parseFloat(params.condoGross) || 0) - (parseFloat(params.condoDebt) || 0));
     const statCondoNet = document.getElementById('statCondoNet');
     if (statCondoNet) statCondoNet.textContent = formatCompactCurrency(condoNetVal);
@@ -721,15 +802,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const statPF = document.getElementById('statPF');
     if (statPF) statPF.textContent = formatCompactCurrency(parseFloat(params.pfAmount) || 0);
 
+    const lastItem = financeState.filteredData[financeState.filteredData.length - 1] || data[data.length - 1];
     const statNetWorthTarget = document.getElementById('statNetWorthTarget');
     if (statNetWorthTarget) statNetWorthTarget.textContent = formatCompactCurrency(lastItem.totalNetWorth);
 
-    // Baseline Cards (if present)
     const kpiNetWorth = document.getElementById('kpiNetWorth');
     if (kpiNetWorth) kpiNetWorth.textContent = formatCurrency(lastItem.totalNetWorth);
   }
 
   function renderChart() {
+    if (!financeChartCanvas) return;
     const ctx = financeChartCanvas.getContext('2d');
     const data = financeState.filteredData;
 
@@ -753,11 +835,19 @@ document.addEventListener('DOMContentLoaded', () => {
         fill: true
       },
       {
-        label: 'เงินกองทุน (A) รวมเงินขายคอนโด',
+        label: 'เงินกองทุน (A)',
         data: data.map(d => d.fundA),
         borderColor: '#10B981', // Emerald Green
         backgroundColor: 'transparent',
         borderWidth: 2,
+        tension: 0.2
+      },
+      {
+        label: 'เงินขายคอนโดสุทธิ',
+        data: data.map(d => d.condoProceeds),
+        borderColor: '#06B6D4', // Bright Cyan/Teal (เส้นแยกขายคอนโดโดยเฉพาะ)
+        backgroundColor: 'transparent',
+        borderWidth: 2.5,
         tension: 0.2
       },
       {
@@ -963,6 +1053,276 @@ document.addEventListener('DOMContentLoaded', () => {
         el.appendChild(opt);
       }
     });
+
+    // Populate Stat Card Cutoff Year Selectors
+    const statIncSel = document.getElementById('statIncomeYearSelect');
+    const statExpSel = document.getElementById('statExpenseYearSelect');
+    [statIncSel, statExpSel].forEach(el => {
+      if (!el) return;
+      const curYear = financeState.summaryCutoffYear || 2050;
+      el.innerHTML = '';
+      for (let y = 2026; y <= 2050; y++) {
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = (y === 2050) ? `ปี ${y} (สิ้นสุด)` : `ปี ${y}`;
+        if (y === curYear) opt.selected = true;
+        el.appendChild(opt);
+      }
+    });
+
+    // Populate Chart Display Start Year & End Year Selectors
+    const chartStartSel = document.getElementById('chartStartYearSelect');
+    const chartEndSel = document.getElementById('chartEndYearSelect');
+
+    if (chartStartSel) {
+      chartStartSel.innerHTML = '';
+      for (let y = 2026; y <= 2050; y++) {
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = `ปี ${y}`;
+        if (y === (financeState.startYear || 2026)) opt.selected = true;
+        chartStartSel.appendChild(opt);
+      }
+    }
+
+    if (chartEndSel) {
+      chartEndSel.innerHTML = '';
+      for (let y = 2026; y <= 2050; y++) {
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = `ปี ${y}`;
+        if (y === (financeState.endYear || 2050)) opt.selected = true;
+        chartEndSel.appendChild(opt);
+      }
+    }
+  }
+
+  function renderDynamicTimelineBlocks() {
+    const incomeContainer = document.getElementById('incomeBlocksContainer');
+    const expContainer = document.getElementById('expBlocksContainer');
+
+    const thaiMonthsNames = [
+      'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.',
+      'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.',
+      'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'
+    ];
+
+    if (incomeContainer) {
+      incomeContainer.innerHTML = '';
+      (params.incomeBlocks || []).forEach((block, index) => {
+        const card = document.createElement('div');
+        card.className = 'timeline-block-card';
+        card.style.cssText = 'background: rgba(15, 23, 42, 0.6); padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border-color); font-size: 0.82rem;';
+
+        let yearOptionsStart = '';
+        let yearOptionsEnd = '';
+        for (let y = 2026; y <= 2050; y++) {
+          yearOptionsStart += `<option value="${y}" ${block.startYear == y ? 'selected' : ''}>ปี ${y}</option>`;
+          yearOptionsEnd += `<option value="${y}" ${block.endYear == y ? 'selected' : ''}>ปี ${y}</option>`;
+        }
+
+        let monthOptionsStart = '';
+        let monthOptionsEnd = '';
+        thaiMonthsNames.forEach((mName, mIdx) => {
+          const mVal = mIdx + 1;
+          monthOptionsStart += `<option value="${mVal}" ${(block.startMonth || 1) == mVal ? 'selected' : ''}>${mName}</option>`;
+          monthOptionsEnd += `<option value="${mVal}" ${(block.endMonth || 12) == mVal ? 'selected' : ''}>${mName}</option>`;
+        });
+
+        card.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-weight: 700; color: #38BDF8;">ช่วงรายได้ที่ ${index + 1}</span>
+            <button type="button" class="btn-del-inc-block" data-index="${index}" style="background:none; border:none; color:#F87171; cursor:pointer; font-size:0.78rem; font-weight:600;">
+              <i class="fa-solid fa-trash-can"></i> ลบช่วงนี้
+            </button>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+            <div>
+              <label style="color:var(--text-muted); display:block; font-size:0.75rem; margin-bottom:3px;">เริ่มต้น:</label>
+              <div style="display:flex; gap:4px;">
+                <select class="inc-block-input" data-index="${index}" data-field="startMonth" style="flex:1; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 4px; border-radius:6px; border:1px solid var(--border-color); font-size:0.75rem;">
+                  ${monthOptionsStart}
+                </select>
+                <select class="inc-block-input" data-index="${index}" data-field="startYear" style="flex:1; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 4px; border-radius:6px; border:1px solid var(--border-color); font-size:0.75rem;">
+                  ${yearOptionsStart}
+                </select>
+              </div>
+            </div>
+            <div>
+              <label style="color:var(--text-muted); display:block; font-size:0.75rem; margin-bottom:3px;">สิ้นสุดถึง:</label>
+              <div style="display:flex; gap:4px;">
+                <select class="inc-block-input" data-index="${index}" data-field="endMonth" style="flex:1; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 4px; border-radius:6px; border:1px solid var(--border-color); font-size:0.75rem;">
+                  ${monthOptionsEnd}
+                </select>
+                <select class="inc-block-input" data-index="${index}" data-field="endYear" style="flex:1; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 4px; border-radius:6px; border:1px solid var(--border-color); font-size:0.75rem;">
+                  ${yearOptionsEnd}
+                </select>
+              </div>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <div>
+              <label style="color:var(--text-muted); display:block; font-size:0.75rem; margin-bottom:3px;">รูปแบบ:</label>
+              <select class="inc-block-input" data-index="${index}" data-field="type" style="width:100%; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 6px; border-radius:6px; border:1px solid var(--border-color);">
+                <option value="fixed" ${block.type === 'fixed' ? 'selected' : ''}>คงที่ประจำเดือน</option>
+                <option value="step" ${block.type === 'step' ? 'selected' : ''}>เพิ่มขึ้นคงที่ประจำปี</option>
+              </select>
+            </div>
+            <div>
+              <label style="color:var(--text-muted); display:block; font-size:0.75rem; margin-bottom:3px;">จำนวน (บาท/เดือน):</label>
+              <input type="number" class="inc-block-input" data-index="${index}" data-field="amount" value="${block.amount}" step="1000" style="width:100%; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 6px; border-radius:6px; border:1px solid var(--border-color);">
+            </div>
+          </div>
+          ${block.type === 'step' ? `
+          <div style="margin-top: 8px; display: flex; align-items: center; gap: 6px; background: rgba(30,41,59,0.5); padding: 6px 8px; border-radius: 6px;">
+            <span style="font-size:0.75rem; color:var(--text-muted);">+เพิ่มปีละ (บาท/เดือน):</span>
+            <input type="number" class="inc-block-input" data-index="${index}" data-field="stepAmount" value="${block.stepAmount || 0}" step="500" style="flex:1; background:rgba(15,23,42,0.8); color:#FFF; padding:3px 6px; border-radius:4px; border:1px solid var(--border-color);">
+          </div>
+          ` : ''}
+        `;
+        incomeContainer.appendChild(card);
+      });
+    }
+
+    if (expContainer) {
+      expContainer.innerHTML = '';
+      (params.expBlocks || []).forEach((block, index) => {
+        const card = document.createElement('div');
+        card.className = 'timeline-block-card';
+        card.style.cssText = 'background: rgba(15, 23, 42, 0.6); padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border-color); font-size: 0.82rem;';
+
+        let yearOptionsStart = '';
+        let yearOptionsEnd = '';
+        for (let y = 2026; y <= 2050; y++) {
+          yearOptionsStart += `<option value="${y}" ${block.startYear == y ? 'selected' : ''}>ปี ${y}</option>`;
+          yearOptionsEnd += `<option value="${y}" ${block.endYear == y ? 'selected' : ''}>ปี ${y}</option>`;
+        }
+
+        let monthOptionsStart = '';
+        let monthOptionsEnd = '';
+        thaiMonthsNames.forEach((mName, mIdx) => {
+          const mVal = mIdx + 1;
+          monthOptionsStart += `<option value="${mVal}" ${(block.startMonth || 1) == mVal ? 'selected' : ''}>${mName}</option>`;
+          monthOptionsEnd += `<option value="${mVal}" ${(block.endMonth || 12) == mVal ? 'selected' : ''}>${mName}</option>`;
+        });
+
+        card.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-weight: 700; color: #F87171;">ช่วงรายจ่ายที่ ${index + 1}</span>
+            <button type="button" class="btn-del-exp-block" data-index="${index}" style="background:none; border:none; color:#F87171; cursor:pointer; font-size:0.78rem; font-weight:600;">
+              <i class="fa-solid fa-trash-can"></i> ลบช่วงนี้
+            </button>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+            <div>
+              <label style="color:var(--text-muted); display:block; font-size:0.75rem; margin-bottom:3px;">เริ่มต้น:</label>
+              <div style="display:flex; gap:4px;">
+                <select class="exp-block-input" data-index="${index}" data-field="startMonth" style="flex:1; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 4px; border-radius:6px; border:1px solid var(--border-color); font-size:0.75rem;">
+                  ${monthOptionsStart}
+                </select>
+                <select class="exp-block-input" data-index="${index}" data-field="startYear" style="flex:1; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 4px; border-radius:6px; border:1px solid var(--border-color); font-size:0.75rem;">
+                  ${yearOptionsStart}
+                </select>
+              </div>
+            </div>
+            <div>
+              <label style="color:var(--text-muted); display:block; font-size:0.75rem; margin-bottom:3px;">สิ้นสุดถึง:</label>
+              <div style="display:flex; gap:4px;">
+                <select class="exp-block-input" data-index="${index}" data-field="endMonth" style="flex:1; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 4px; border-radius:6px; border:1px solid var(--border-color); font-size:0.75rem;">
+                  ${monthOptionsEnd}
+                </select>
+                <select class="exp-block-input" data-index="${index}" data-field="endYear" style="flex:1; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 4px; border-radius:6px; border:1px solid var(--border-color); font-size:0.75rem;">
+                  ${yearOptionsEnd}
+                </select>
+              </div>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <div>
+              <label style="color:var(--text-muted); display:block; font-size:0.75rem; margin-bottom:3px;">รูปแบบ:</label>
+              <select class="exp-block-input" data-index="${index}" data-field="type" style="width:100%; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 6px; border-radius:6px; border:1px solid var(--border-color);">
+                <option value="fixed" ${block.type === 'fixed' ? 'selected' : ''}>คงที่ประจำเดือน</option>
+                <option value="step" ${block.type === 'step' ? 'selected' : ''}>เพิ่มขึ้นคงที่ประจำปี</option>
+              </select>
+            </div>
+            <div>
+              <label style="color:var(--text-muted); display:block; font-size:0.75rem; margin-bottom:3px;">จำนวน (บาท/เดือน):</label>
+              <input type="number" class="exp-block-input" data-index="${index}" data-field="amount" value="${block.amount}" step="1000" style="width:100%; background:rgba(30,41,59,0.8); color:#FFF; padding:4px 6px; border-radius:6px; border:1px solid var(--border-color);">
+            </div>
+          </div>
+          ${block.type === 'step' ? `
+          <div style="margin-top: 8px; display: flex; align-items: center; gap: 6px; background: rgba(30,41,59,0.5); padding: 6px 8px; border-radius: 6px;">
+            <span style="font-size:0.75rem; color:var(--text-muted);">+เพิ่มปีละ (บาท/เดือน):</span>
+            <input type="number" class="exp-block-input" data-index="${index}" data-field="stepAmount" value="${block.stepAmount || 0}" step="500" style="flex:1; background:rgba(15,23,42,0.8); color:#FFF; padding:3px 6px; border-radius:4px; border:1px solid var(--border-color);">
+          </div>
+          ` : ''}
+        `;
+        expContainer.appendChild(card);
+      });
+    }
+
+    // Attach Event Listeners
+    attachDynamicBlockListeners();
+  }
+
+  function attachDynamicBlockListeners() {
+    document.querySelectorAll('.inc-block-input').forEach(input => {
+      input.addEventListener('change', (e) => {
+        const idx = parseInt(e.target.getAttribute('data-index'));
+        const field = e.target.getAttribute('data-field');
+        if (params.incomeBlocks && params.incomeBlocks[idx]) {
+          let val = e.target.value;
+          if (field === 'startYear' || field === 'endYear' || field === 'startMonth' || field === 'endMonth') {
+            val = parseInt(val);
+          } else if (field === 'amount' || field === 'stepAmount') {
+            val = parseFloat(val) || 0;
+          }
+          params.incomeBlocks[idx][field] = val;
+          renderDynamicTimelineBlocks();
+          runSimulationAndRender();
+        }
+      });
+    });
+
+    document.querySelectorAll('.btn-del-inc-block').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = parseInt(e.currentTarget.getAttribute('data-index'));
+        if (params.incomeBlocks) {
+          params.incomeBlocks.splice(idx, 1);
+          renderDynamicTimelineBlocks();
+          runSimulationAndRender();
+        }
+      });
+    });
+
+    document.querySelectorAll('.exp-block-input').forEach(input => {
+      input.addEventListener('change', (e) => {
+        const idx = parseInt(e.target.getAttribute('data-index'));
+        const field = e.target.getAttribute('data-field');
+        if (params.expBlocks && params.expBlocks[idx]) {
+          let val = e.target.value;
+          if (field === 'startYear' || field === 'endYear' || field === 'startMonth' || field === 'endMonth') {
+            val = parseInt(val);
+          } else if (field === 'amount' || field === 'stepAmount') {
+            val = parseFloat(val) || 0;
+          }
+          params.expBlocks[idx][field] = val;
+          renderDynamicTimelineBlocks();
+          runSimulationAndRender();
+        }
+      });
+    });
+
+    document.querySelectorAll('.btn-del-exp-block').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = parseInt(e.currentTarget.getAttribute('data-index'));
+        if (params.expBlocks) {
+          params.expBlocks.splice(idx, 1);
+          renderDynamicTimelineBlocks();
+          runSimulationAndRender();
+        }
+      });
+    });
   }
 
   // ==========================================================================
@@ -970,6 +1330,104 @@ document.addEventListener('DOMContentLoaded', () => {
   // ==========================================================================
   function setupDashboardEventListeners() {
     setupNavigation();
+
+    // Summary Stat Cards Year Cutoff Listeners
+    const statIncSel = document.getElementById('statIncomeYearSelect');
+    const statExpSel = document.getElementById('statExpenseYearSelect');
+    [statIncSel, statExpSel].forEach(sel => {
+      if (sel) {
+        sel.addEventListener('change', (e) => {
+          const val = parseInt(e.target.value);
+          financeState.summaryCutoffYear = val;
+          if (statIncSel) statIncSel.value = val;
+          if (statExpSel) statExpSel.value = val;
+          updateKPICards();
+        });
+      }
+    });
+
+    // Chart Display Range Listeners (Start Year & End Year)
+    const chartStartSel = document.getElementById('chartStartYearSelect');
+    const chartEndSel = document.getElementById('chartEndYearSelect');
+
+    const updateChartRangeUI = () => {
+      const titleSpan = document.getElementById('chartRangeTitle');
+      if (titleSpan) {
+        titleSpan.textContent = `${financeState.startYear} – ${financeState.endYear}`;
+      }
+      filterData();
+      updateKPICards();
+      renderChart();
+      renderTable();
+    };
+
+    if (chartStartSel) {
+      chartStartSel.addEventListener('change', (e) => {
+        let val = parseInt(e.target.value);
+        if (val > financeState.endYear) {
+          val = financeState.endYear;
+          chartStartSel.value = val;
+        }
+        financeState.startYear = val;
+        updateChartRangeUI();
+      });
+    }
+
+    if (chartEndSel) {
+      chartEndSel.addEventListener('change', (e) => {
+        let val = parseInt(e.target.value);
+        if (val < financeState.startYear) {
+          val = financeState.startYear;
+          chartEndSel.value = val;
+        }
+        financeState.endYear = val;
+        updateChartRangeUI();
+      });
+    }
+
+    // Add Dynamic Timeline Block Buttons
+    const addIncomeBlockBtn = document.getElementById('addIncomeBlockBtn');
+    if (addIncomeBlockBtn) {
+      addIncomeBlockBtn.addEventListener('click', () => {
+        if (!params.incomeBlocks) params.incomeBlocks = [];
+        const lastBlock = params.incomeBlocks[params.incomeBlocks.length - 1];
+        const nextStart = lastBlock ? Math.min(2050, lastBlock.endYear + 1) : 2026;
+        params.incomeBlocks.push({
+          id: Date.now(),
+          label: `ช่วงรายได้ใหม่`,
+          startYear: nextStart,
+          endYear: 2050,
+          amount: 20000,
+          type: 'fixed',
+          stepAmount: 0
+        });
+        renderDynamicTimelineBlocks();
+        runSimulationAndRender();
+      });
+    }
+
+    const addExpBlockBtn = document.getElementById('addExpBlockBtn');
+    if (addExpBlockBtn) {
+      addExpBlockBtn.addEventListener('click', () => {
+        if (!params.expBlocks) params.expBlocks = [];
+        const lastBlock = params.expBlocks[params.expBlocks.length - 1];
+        const nextStart = lastBlock ? Math.min(2050, lastBlock.endYear + 1) : 2026;
+        params.expBlocks.push({
+          id: Date.now(),
+          label: `ช่วงรายจ่ายใหม่`,
+          startYear: nextStart,
+          endYear: 2050,
+          amount: 15000,
+          type: 'fixed',
+          stepAmount: 0
+        });
+        renderDynamicTimelineBlocks();
+        runSimulationAndRender();
+      });
+    }
+
+    // Initial render of timeline blocks
+    renderDynamicTimelineBlocks();
 
     // 1. Income 1 Slider & Year
     const sliderIncome1 = document.getElementById('sliderIncome1');
@@ -1348,56 +1806,120 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Parameter Tuning Inputs Listeners
     const tuneInputs = [
-      { el: paramFundAInit, key: 'fundAInit' },
-      { el: paramFundAYield, key: 'fundAYield' },
-      { el: paramFundADeposit, key: 'fundADeposit' },
-      { el: paramFundATransfer, key: 'fundATransfer' },
-      { el: paramReserveBInit, key: 'reserveBInit' },
-      { el: paramIncomePhase1, key: 'incomePhase1' },
-      { el: paramIncomePhase2, key: 'incomePhase2' },
-      { el: paramExpPhase1, key: 'expPhase1' },
-      { el: paramExpPhase2, key: 'expPhase2' },
-      { el: paramCondoGross, key: 'condoGross' },
-      { el: paramCondoDebt, key: 'condoDebt' },
-      { el: paramCondoMonth, key: 'condoMonth' },
-      { el: paramCondoYear, key: 'condoYear' },
-      { el: paramCondoDest, key: 'condoDest' },
-      { el: paramPFAmount, key: 'pfAmount' },
-      { el: paramPFMonth, key: 'pfMonth' },
-      { el: paramPFYear, key: 'pfYear' },
-      { el: paramPFDest, key: 'pfDest' }
+      { id: 'paramCondoGross', key: 'condoGross', isNum: true },
+      { id: 'paramCondoDebt', key: 'condoDebt', isNum: true },
+      { id: 'paramCondoMonth', key: 'condoMonth', isNum: true },
+      { id: 'paramCondoYear', key: 'condoYear', isNum: true },
+      { id: 'paramCondoDest', key: 'condoDest', isNum: false },
+      { id: 'paramPFAmount', key: 'pfAmount', isNum: true },
+      { id: 'paramPFMonth', key: 'pfMonth', isNum: true },
+      { id: 'paramPFYear', key: 'pfYear', isNum: true },
+      { id: 'paramPFDest', key: 'pfDest', isNum: false },
+      { id: 'paramFundAInit', key: 'fundAInit', isNum: true },
+      { id: 'paramFundAYield', key: 'fundAYield', isNum: true },
+      { id: 'paramFundADeposit', key: 'fundADeposit', isNum: true },
+      { id: 'paramReserveBInit', key: 'reserveBInit', isNum: true },
+      { id: 'paramFundATransfer', key: 'fundATransfer', isNum: true }
     ];
 
-    tuneInputs.forEach(({ el, key }) => {
+    tuneInputs.forEach(({ id, key, isNum }) => {
+      const el = document.getElementById(id);
       if (el) {
         const eventType = (el.tagName === 'SELECT') ? 'change' : 'input';
         el.addEventListener(eventType, (e) => {
-          params[key] = (el.tagName === 'SELECT') ? e.target.value : (parseFloat(e.target.value) || 0);
+          params[key] = isNum ? (parseFloat(e.target.value) || 0) : e.target.value;
           runSimulationAndRender();
         });
       }
     });
+
+    // Save Settings Event Listeners
+    const saveParamsBtn = document.getElementById('saveParamsBtn');
+    const saveParamsBtnDrawer = document.getElementById('saveParamsBtnDrawer');
+    if (saveParamsBtn) saveParamsBtn.addEventListener('click', saveParams);
+    if (saveParamsBtnDrawer) saveParamsBtnDrawer.addEventListener('click', saveParams);
+  }
+
+  function showToast(msg) {
+    const toast = document.getElementById('toastNotification');
+    const toastMsg = document.getElementById('toastMsg');
+    if (toast && toastMsg) {
+      toastMsg.textContent = msg;
+      toast.style.display = 'flex';
+      setTimeout(() => {
+        toast.style.display = 'none';
+      }, 3000);
+    }
+  }
+
+  function saveParamsToStorageSilently() {
+    localStorage.setItem('lifeos_finance_params', JSON.stringify(params));
+    localStorage.setItem('lifeos_finance_state', JSON.stringify({
+      startYear: financeState.startYear,
+      endYear: financeState.endYear,
+      summaryCutoffYear: financeState.summaryCutoffYear
+    }));
+  }
+
+  function saveParams() {
+    saveParamsToStorageSilently();
+    showToast('บันทึกการตั้งค่าเรียบร้อยแล้ว!');
+  }
+
+  function loadSavedParams() {
+    const saved = localStorage.getItem('lifeos_finance_params');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        Object.assign(params, parsed);
+      } catch (e) {
+        console.error('Error parsing saved params', e);
+      }
+    }
+    const savedState = localStorage.getItem('lifeos_finance_state');
+    if (savedState) {
+      try {
+        const parsedState = JSON.parse(savedState);
+        if (parsedState.startYear) financeState.startYear = parsedState.startYear;
+        if (parsedState.endYear) financeState.endYear = parsedState.endYear;
+        if (parsedState.summaryCutoffYear) financeState.summaryCutoffYear = parsedState.summaryCutoffYear;
+      } catch (e) {
+        console.error('Error parsing saved state', e);
+      }
+    }
   }
 
   function populateTuningInputs() {
-    if (paramFundAInit) paramFundAInit.value = params.fundAInit;
-    if (paramFundAYield) paramFundAYield.value = params.fundAYield;
-    if (paramFundADeposit) paramFundADeposit.value = params.fundADeposit;
-    if (paramFundATransfer) paramFundATransfer.value = params.fundATransfer;
-    if (paramReserveBInit) paramReserveBInit.value = params.reserveBInit;
-    if (paramIncomePhase1) paramIncomePhase1.value = params.incomePhase1;
-    if (paramIncomePhase2) paramIncomePhase2.value = params.incomePhase2;
-    if (paramExpPhase1) paramExpPhase1.value = params.expPhase1;
-    if (paramExpPhase2) paramExpPhase2.value = params.expPhase2;
-    if (paramCondoGross) paramCondoGross.value = params.condoGross;
-    if (paramCondoDebt) paramCondoDebt.value = params.condoDebt;
-    if (paramCondoMonth) paramCondoMonth.value = params.condoMonth;
-    if (paramCondoYear) paramCondoYear.value = params.condoYear;
-    if (paramCondoDest) paramCondoDest.value = params.condoDest;
-    if (paramPFAmount) paramPFAmount.value = params.pfAmount;
-    if (paramPFMonth) paramPFMonth.value = params.pfMonth;
-    if (paramPFYear) paramPFYear.value = params.pfYear;
-    if (paramPFDest) paramPFDest.value = params.pfDest;
+    const tuneIds = [
+      'paramCondoGross', 'paramCondoDebt', 'paramCondoMonth', 'paramCondoYear', 'paramCondoDest',
+      'paramPFAmount', 'paramPFMonth', 'paramPFYear', 'paramPFDest',
+      'paramFundAInit', 'paramFundAYield', 'paramFundADeposit', 'paramReserveBInit', 'paramFundATransfer'
+    ];
+
+    const keyMap = {
+      paramCondoGross: 'condoGross',
+      paramCondoDebt: 'condoDebt',
+      paramCondoMonth: 'condoMonth',
+      paramCondoYear: 'condoYear',
+      paramCondoDest: 'condoDest',
+      paramPFAmount: 'pfAmount',
+      paramPFMonth: 'pfMonth',
+      paramPFYear: 'pfYear',
+      paramPFDest: 'pfDest',
+      paramFundAInit: 'fundAInit',
+      paramFundAYield: 'fundAYield',
+      paramFundADeposit: 'fundADeposit',
+      paramReserveBInit: 'reserveBInit',
+      paramFundATransfer: 'fundATransfer'
+    };
+
+    tuneIds.forEach(id => {
+      const el = document.getElementById(id);
+      const k = keyMap[id];
+      if (el && k && params[k] !== undefined) {
+        el.value = params[k];
+      }
+    });
 
     const sliderPF = document.getElementById('sliderPF');
     const badgePF = document.getElementById('badgePF');
@@ -1412,77 +1934,66 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sliderFundAWithdrawAmount) sliderFundAWithdrawAmount.value = params.fundAWithdrawAmount;
     if (badgeFundAWithdrawAmount) badgeFundAWithdrawAmount.textContent = formatCompactCurrency(params.fundAWithdrawAmount);
     if (selFundAWithdrawYear) selFundAWithdrawYear.value = params.fundAWithdrawYear;
+
+    // Update Chart Start & End Year Selects and Stat Card Cutoff Selects
+    const chartStartSel = document.getElementById('chartStartYearSelect');
+    const chartEndSel = document.getElementById('chartEndYearSelect');
+    if (chartStartSel && financeState.startYear) chartStartSel.value = financeState.startYear;
+    if (chartEndSel && financeState.endYear) chartEndSel.value = financeState.endYear;
+
+    const statIncSel = document.getElementById('statIncomeYearSelect');
+    const statExpSel = document.getElementById('statExpenseYearSelect');
+    if (statIncSel && financeState.summaryCutoffYear) statIncSel.value = financeState.summaryCutoffYear;
+    if (statExpSel && financeState.summaryCutoffYear) statExpSel.value = financeState.summaryCutoffYear;
+    
+    const titleSpan = document.getElementById('chartRangeTitle');
+    if (titleSpan) titleSpan.textContent = `${financeState.startYear} – ${financeState.endYear}`;
   }
 
-  function renderYearlyOverrideTable() {
-    const tbody = document.getElementById('yearlyOverrideTbody');
+  function renderYearlySummaryTable() {
+    const tbody = document.getElementById('yearlySummaryTbody') || document.getElementById('yearlyOverrideTbody');
     if (!tbody) return;
 
     tbody.innerHTML = '';
+    const fullData = financeState.fullMonthlyData;
+    if (!fullData || fullData.length === 0) return;
 
     for (let y = 2026; y <= 2050; y++) {
+      const yearMonths = fullData.filter(item => item.year === y);
+      if (yearMonths.length === 0) continue;
+
       const age = y === 2026 ? 49 : (49 + y - 2026);
+      
+      const totalInc = yearMonths.reduce((sum, m) => sum + (m.income || 0), 0);
+      const totalExp = yearMonths.reduce((sum, m) => sum + (m.expense || 0), 0);
+      const totalNetYear = totalInc - totalExp;
 
-      // Default baseline values
-      let baseIncome = (y === 2026 || y === 2027) ? params.incomePhase1 : params.incomePhase2;
-      let baseExp = (y <= 2028) ? params.expPhase1 : params.expPhase2;
+      const avgIncMonthly = Math.round(totalInc / yearMonths.length);
+      const avgExpMonthly = Math.round(totalExp / yearMonths.length);
+      const diffMonthly = avgIncMonthly - avgExpMonthly;
 
-      let currentIncome = params.yearlyOverrides[y]?.income !== undefined ? params.yearlyOverrides[y].income : baseIncome;
-      let currentExp = params.yearlyOverrides[y]?.expense !== undefined ? params.yearlyOverrides[y].expense : baseExp;
+      const isPositive = diffMonthly >= 0;
+      const isPositiveYear = totalNetYear >= 0;
 
-      const diff = currentIncome - currentExp;
+      const noteText = (y === 2026) ? ' <span style="font-size:0.72rem; color:var(--text-muted);">(3 เดือน)</span>' : '';
 
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td style="font-weight:600; color:var(--text-main); text-align:center;">ปี ${y} (อายุ ${age})</td>
-        <td style="text-align:center;">
-          <input type="number" data-year="${y}" data-type="income" class="yearly-override-input" value="${currentIncome}" step="1000" style="width:120px; background:rgba(30,41,59,0.8); color:#06B6D4; padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); text-align:right; font-weight:600; font-family:inherit;">
+        <td style="font-weight:600; color:var(--text-main); text-align:center;">ปี ${y} (อายุ ${age})${noteText}</td>
+        <td style="text-align:center; color:#38BDF8; font-weight:600;">฿${avgIncMonthly.toLocaleString()} /ด.</td>
+        <td style="text-align:center; color:#F87171; font-weight:600;">฿${avgExpMonthly.toLocaleString()} /ด.</td>
+        <td style="font-weight:700; text-align:center; color:${isPositive ? '#10B981' : '#F87171'};">
+          ${isPositive ? '+' : ''}฿${diffMonthly.toLocaleString()} /ด.
         </td>
-        <td style="text-align:center;">
-          <input type="number" data-year="${y}" data-type="expense" class="yearly-override-input" value="${currentExp}" step="1000" style="width:120px; background:rgba(30,41,59,0.8); color:#EF4444; padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); text-align:right; font-weight:600; font-family:inherit;">
-        </td>
-        <td id="yearlyDiff_${y}" style="font-weight:600; text-align:center; color:${diff >= 0 ? '#10B981' : '#F87171'};">
-          ${diff >= 0 ? '+' : ''}${formatCurrency(diff)}/ด.
+        <td style="font-weight:700; text-align:center; color:${isPositiveYear ? '#10B981' : '#F87171'};">
+          ${isPositiveYear ? '+' : ''}฿${totalNetYear.toLocaleString()} /ปี
         </td>
       `;
       tbody.appendChild(tr);
     }
-
-    // Attach input event listeners
-    const inputs = tbody.querySelectorAll('.yearly-override-input');
-    inputs.forEach(input => {
-      input.addEventListener('input', (e) => {
-        const year = parseInt(e.target.getAttribute('data-year'));
-        const type = e.target.getAttribute('data-type');
-        const val = parseFloat(e.target.value) || 0;
-
-        if (!params.yearlyOverrides[year]) params.yearlyOverrides[year] = {};
-        params.yearlyOverrides[year][type] = val;
-
-        // Update row diff label live
-        const baseInc = (year === 2026 || year === 2027) ? params.incomePhase1 : params.incomePhase2;
-        const baseE = (year <= 2028) ? params.expPhase1 : params.expPhase2;
-
-        const inc = params.yearlyOverrides[year].income !== undefined ? params.yearlyOverrides[year].income : baseInc;
-        const exp = params.yearlyOverrides[year].expense !== undefined ? params.yearlyOverrides[year].expense : baseE;
-        const diffTd = document.getElementById(`yearlyDiff_${year}`);
-        if (diffTd) {
-          const d = inc - exp;
-          diffTd.textContent = `${d >= 0 ? '+' : ''}${formatCurrency(d)}/ด.`;
-          diffTd.style.color = d >= 0 ? '#10B981' : '#F87171';
-        }
-
-        // Recalculate simulation
-        runSimulation();
-        updateKPICards();
-        renderChart();
-        renderTable();
-        updateSidebarSummary();
-      });
-    });
   }
 
-  // Update runSimulationAndRender to also populate yearly overrides
+  // Update runSimulationAndRender to also populate yearly summary table and auto-save
   const previousRunSimulationAndRender = runSimulationAndRender;
   runSimulationAndRender = function() {
     runSimulation();
@@ -1490,13 +2001,15 @@ document.addEventListener('DOMContentLoaded', () => {
     renderChart();
     renderTable();
     updateSidebarSummary();
-    renderYearlyOverrideTable();
+    renderYearlySummaryTable();
+    saveParamsToStorageSilently();
   };
 
   // Extended Init Function
   const originalInit = init;
   init = function() {
     originalInit();
+    loadSavedParams();
     populateAllYearSelectOptions();
     setupDashboardEventListeners();
     populateTuningInputs();
